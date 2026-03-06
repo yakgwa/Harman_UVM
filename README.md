@@ -455,33 +455,33 @@ EX)
         assoc.first(idx);
         assoc.delete(idx);
     
-EX)
+  - EX)
 
-    int switch[string], min_address, max_address;
-    initial begin
-      int i, r, file;
-      string s;
-      file = $fopen("switch.txt","r"); //switch.txt를 read 모드로 읽어옴
-    
-    //파일 끝까지 반복해서 읽기
-      while (!$feof(file)) begin //파일을 모두 읽으면 $feof(file)=1
-        r = $fscanf(file, "%d %s", i, s); //$fscanf로 파일에서 문자열을 읽어 파싱 및 변수에 넣음
-                                          //%d : 정수 하나 읽어서 i에 저장
-                                          //%s : 공백 전까지 문자열 읽어서 s에 저장
-                                          //반환값 r은 "성공적으로 읽어 넣은 항목 개수"
-       //예컨대, 파일 한 줄이 12 min_address라고 해보자. i=12, s="min_address", r=2
-        switch[s] = i;
-      end
-      $fclose(file);
-    
-    //"min_address" 꺼내기
-      min_address = switch["min_address"];
-    
-    //"max_address"꺼내기
-      if (switch.exists("max_address"))
-        max_address = switch["max_address"];
-      else
-        max_address = 1000;
+        int switch[string], min_address, max_address;
+        initial begin
+          int i, r, file;
+          string s;
+          file = $fopen("switch.txt","r"); //switch.txt를 read 모드로 읽어옴
+        
+        //파일 끝까지 반복해서 읽기
+          while (!$feof(file)) begin //파일을 모두 읽으면 $feof(file)=1
+            r = $fscanf(file, "%d %s", i, s); //$fscanf로 파일에서 문자열을 읽어 파싱 및 변수에 넣음
+                                              //%d : 정수 하나 읽어서 i에 저장
+                                              //%s : 공백 전까지 문자열 읽어서 s에 저장
+                                              //반환값 r은 "성공적으로 읽어 넣은 항목 개수"
+           //예컨대, 파일 한 줄이 12 min_address라고 해보자. i=12, s="min_address", r=2
+            switch[s] = i;
+          end
+          $fclose(file);
+        
+        //"min_address" 꺼내기
+          min_address = switch["min_address"];
+        
+        //"max_address"꺼내기
+          if (switch.exists("max_address"))
+            max_address = switch["max_address"];
+          else
+            max_address = 1000;
         
 - Array Reduction 예시 - 배열에 대해 .sum, .product와 같은 리덕션(요약) 메소드 제공
   - .sum, .product, .and, .or, .xor
@@ -543,6 +543,7 @@ EX)
         tq = d.find_last_index with (item==4);  // {5}, 조건을 만족하는 마지막 인덱스
 
 6️⃣ typedef, parameter
+
 typedef, parameter는 define과 다르게, 컴파일러가 의미를 이해하여 심볼 테이블에 등록하고, 중복이 발생 할 경우에는 에러를 띄움으로써 언어 차원에서 타입/상수로 관리한다.
 
     parameter OPSIZE = 8;
