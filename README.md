@@ -955,114 +955,114 @@ task가 하나의 절차적 함수로 취급됨에 따라 return;시, 즉시 tas
         b1 ── id = 0
         b2 ── id = 1
         */
-Connecting the Testbench and Design
+
+### Connecting the Testbench and Design
 
 Testbench - DUT 연결을 안전하고, 재사용 가능하고, 타이밍 버그 없이 만들기 위해 단순 포트 연결이 아닌 추가 개념이 확장되었다. 두 가지 코드를 비교해보자.
 
-//-------------------------
-// (1) Testbench module
-//-------------------------
-module test (
-  input  logic [1:0] grant,
-  output logic [1:0] request,
-  input  logic       reset,
-  input  logic       clk
-);
-  initial begin
-    @(posedge clk);
-    request <= 2'b01;
-    $display("@%0d: Drove req=01", $time);
-    repeat (2) @(posedge clk);
-    if (grant != 2'b01)
-      $display("@%0d: a1: grant != 2'b01", $time);
-    ...
-    $finish;
-  end
-endmodule
-
-//-------------------------
-// (2) DUT module (ports)
-//-------------------------
-module arb_port (
-  output logic [1:0] grant,
-  input  logic [1:0] request,
-  input  logic       reset,
-  input  logic       clk
-);
-  ...
-  always @(posedge clk or posedge reset) begin
-    if (reset)
-      grant <= 2'b00;
-    else
+    //-------------------------
+    // (1) Testbench module
+    //-------------------------
+    module test (
+      input  logic [1:0] grant,
+      output logic [1:0] request,
+      input  logic       reset,
+      input  logic       clk
+    );
+      initial begin
+        @(posedge clk);
+        request <= 2'b01;
+        $display("@%0d: Drove req=01", $time);
+        repeat (2) @(posedge clk);
+        if (grant != 2'b01)
+          $display("@%0d: a1: grant != 2'b01", $time);
+        ...
+        $finish;
+      end
+    endmodule
+    
+    //-------------------------
+    // (2) DUT module (ports)
+    //-------------------------
+    module arb_port (
+      output logic [1:0] grant,
+      input  logic [1:0] request,
+      input  logic       reset,
+      input  logic       clk
+    );
       ...
-  end
-endmodule
+      always @(posedge clk or posedge reset) begin
+        if (reset)
+          grant <= 2'b00;
+        else
+          ...
+      end
+    endmodule
+    
+    //-------------------------
+    // (3) Top module: wiring
+    //-------------------------
+    module top;
+      logic [1:0] grant, request;
+      logic       clk = 0, reset;
+      always #5 clk = ~clk;
+      arb_port a1 (grant, request, reset, clk);
+      test     t1 (grant, request, reset, clk);
+    endmodule
 
-//-------------------------
-// (3) Top module: wiring
-//-------------------------
-module top;
-  logic [1:0] grant, request;
-  logic       clk = 0, reset;
-  always #5 clk = ~clk;
-  arb_port a1 (grant, request, reset, clk);
-  test     t1 (grant, request, reset, clk);
-endmodule
-기존 코드
+- 기존 코드 : 포트 나열 순서가 맞아야 하며, 신호 수가 늘어수록 실수할 부분들이 급격하게 늘어난다.
 
-포트 나열 순서가 맞아야 하며, 신호 수가 늘어수록 실수할 부분들이 급격하게 늘어난다.
-
-//-------------------------
-// (1) Interface definition
-//-------------------------
-interface arb_if (input bit clk);
-  logic [1:0] grant, request;
-  logic       reset;
-endinterface
-
-//-------------------------
-// (2) Testbench module
-//-------------------------
-module test (arb_if arbif);
-  ...
-  initial begin
-    // reset code left out
-    @(posedge arbif.clk);
-    arbif.request <= 2'b01;
-    $display("@%0d: Drove req=01", $time);
-    repeat (2) @(posedge arbif.clk);
-    if (arbif.grant != 2'b01)
-      $display("@%0d: a1: grant != 2'b01", $time);
-    $finish;
-  end
-endmodule : test
-
-//-------------------------
-// (3) DUT module (interface port)
-//-------------------------
-module arb (arb_if arbif);
-  ...
-  always @(posedge arbif.clk or posedge arbif.reset) begin
-    if (arbif.reset)
-      arbif.grant <= 2'b00;
-    else
-      arbif.grant <= next_grant;
-    ...
-  end
-endmodule
-
-//-------------------------
-// (4) Top module
-//-------------------------
-module top;
-  bit clk;
-  always #5 clk = ~clk;
-  arb_if arbif(clk);
-
-  arb  a1(arbif);
-  test t1(arbif);
-
-endmodule : top
+    //-------------------------
+    // (1) Interface definition
+    //-------------------------
+    interface arb_if (input bit clk);
+      logic [1:0] grant, request;
+      logic       reset;
+    endinterface
+    
+    //-------------------------
+    // (2) Testbench module
+    //-------------------------
+    module test (arb_if arbif);
+      ...
+      initial begin
+        // reset code left out
+        @(posedge arbif.clk);
+        arbif.request <= 2'b01;
+        $display("@%0d: Drove req=01", $time);
+        repeat (2) @(posedge arbif.clk);
+        if (arbif.grant != 2'b01)
+          $display("@%0d: a1: grant != 2'b01", $time);
+        $finish;
+      end
+    endmodule : test
+    
+    //-------------------------
+    // (3) DUT module (interface port)
+    //-------------------------
+    module arb (arb_if arbif);
+      ...
+      always @(posedge arbif.clk or posedge arbif.reset) begin
+        if (arbif.reset)
+          arbif.grant <= 2'b00;
+        else
+          arbif.grant <= next_grant;
+        ...
+      end
+    endmodule
+    
+    //-------------------------
+    // (4) Top module
+    //-------------------------
+    module top;
+      bit clk;
+      always #5 clk = ~clk;
+      arb_if arbif(clk);
+    
+      arb  a1(arbif);
+      test t1(arbif);
+    
+    endmodule : top
 interface arb_if(input bit clk);를 통해 arb_if가 grant/request/reset/clk를 한 덩어리로 묶고, clk는 interface 포트로 들어가서, interface 내부에서 arbif.clk처럼 접근 가능해졌다. 만약 개별로 꺼내서 사용하고 싶다면, 다음과 같이 사용하면 된다.
 
 arb_port a1 (
