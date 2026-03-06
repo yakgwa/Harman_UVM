@@ -686,27 +686,27 @@ SystemVerilog는 Verilog의 Procedural Statement(절차문)과 Task/Function을 
 🚀 SystemVerilog 개선점
 - ✅ void function 지원
   - 이를 통해, 반환 값 없이도 함수 사용이 가능하며, task처럼 쓰되, 시간은 소비하지 않는 '순수 계산/출력용 함수' 개념이 명확해졌다.
-
-      function void print_state();
-          $display(...);
-      endfunction
+  
+        function void print_state();
+            $display(...);
+        endfunction
 
 - ✅task/function 내부 begin...end 생략 가능
 
-    task multiple_lines;
-        $display("First line");
-        $display("Second line");
-    endtask
+      task multiple_lines;
+          $display("First line");
+          $display("Second line");
+      endtask
 
 - ✅task 구문에서 return
 
-    task load_array(int len, ref int array[]);
-        if (len <= 0) begin
-            $display("Bad len");
-            return;
-        end
-        ...
-    endtask
+      task load_array(int len, ref int array[]);
+          if (len <= 0) begin
+              $display("Bad len");
+              return;
+          end
+          ...
+      endtask
 
 task가 하나의 절차적 함수로 취급됨에 따라 return;시, 즉시 task 구문이 종료된다.
 
@@ -714,39 +714,36 @@ task가 하나의 절차적 함수로 취급됨에 따라 return;시, 즉시 tas
 
 기존 verilog 방식은 `timescale 1ns / 1ps로 timescale을 정의하는데, 예컨대, 파일 A가 1ns/1ps, 파일 B가 10ns/1ns이면, 컴파일 순서가 바뀜에 따라 시뮬레이션 결과가 달라질 수 있다. 이에 따라 SystemVerilog는 다음과 같이 개선하였다.
 
-module timing;
-    timeunit 1ns;
-    timeprecision 1ps;
+    module timing;
+        timeunit 1ns;
+        timeprecision 1ps;
 ​
-
 👉 Call by Reference를 지원하는 SystemVerilog
 
-task bus_read(
-    input logic [31:0] addr, //input datatype : Call by value
-    ref   logic [31:0] data  //ref datatype : Call by Reference
-);
+    task bus_read(
+        input logic [31:0] addr, //input datatype : Call by value
+        ref   logic [31:0] data  //ref datatype : Call by Reference
+    );
+    
 버스의 read/write 같은 동작은 값을 받아오는 행위이므로, ref를 사용하게 되면, C의 포인터 전달과 유사하게 여러 output을 깔끔하게 처리할 수 있다.
 
-Basic OOP
+### Basic OOP
 
 모듈 중심의 Verilog 사고에서 객체(class) 중심의 검증 사고로 전환 SystemVerilog의 OOP(클래스)에 관한 문법은 상당히 중요하다.
 
-​
+​- 용어 정리
+  
+  - 1️⃣ Class : 데이터 + 동작을 묶은 설계 블록
+    - 변수(property) + 함수/태스크(method)를 한 덩어리로 묶음
+    - Verilog의 module과 개념적으로 가장 유사 (단, module은 하드웨어 구조이지만, class는 검증용 소프트웨어 객체라고 이해하면 된다.)
 
-●용어 정리
+        class BusTran;
+          int addr;
+          function void display();
+          endfunction
+        endclass
 
-1️⃣ Class : 데이터 + 동작을 묶은 설계 블록
-
-변수(property) + 함수/태스크(method)를 한 덩어리로 묶음
-
-Verilog의 module과 개념적으로 가장 유사 (단, module은 하드웨어 구조이지만, class는 검증용 소프트웨어 객체라고 이해하면 된다.)
-
-class BusTran;
-  int addr;
-  function void display();
-  endfunction
-endclass
-2️⃣ Object : 클래스로부터 만들어진 실제 인스턴스
+  - 2️⃣ Object : 클래스로부터 만들어진 실제 인스턴스
 
 class 자체는 설계도
 
