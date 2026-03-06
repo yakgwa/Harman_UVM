@@ -320,11 +320,13 @@ Formal Verification의 특징: 테스트벤치, 입력 벡터 없음, 결과는 
     - 초기화/미정 상태 디버깅에 불리
     - 따라서 Verification에서는 잘 안 씀. RTL 동작 검증에는 4-State가 더 안전
 
-    ⚠️ 주의점1 
+    ⚠️ 주의점1
+    
     byte b;
     //byte 범위는 -128 ~ 127로, 0~255 아님 (C랑 다름)
     
     ⚠️ 주의점2
+    
     logic x;  // 4-state
     bit   y;  // 2-state
     y = x;    // x가 X/Z면 정보 손실 발생
@@ -354,7 +356,7 @@ Formal Verification의 특징: 테스트벤치, 입력 벡터 없음, 결과는 
       integer samearr = '{4{8}}; //{8,8,8,8}
     
       
-    - Itertation에서 배열 활용 : for vs foreach
+  - Itertation에서 배열 활용 : for vs foreach
   
       //for : 인덱스를 직접 관리
       for (int i=0; i<$size(src); i++) 
