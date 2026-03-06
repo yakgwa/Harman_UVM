@@ -1066,19 +1066,21 @@ Testbench - DUT 연결을 안전하고, 재사용 가능하고, 타이밍 버그
   
     - interface arb_if(input bit clk);를 통해 arb_if가 grant/request/reset/clk를 한 덩어리로 묶고, clk는 interface 포트로 들어가서, interface 내부에서 arbif.clk처럼 접근 가능해졌다. 만약 개별로 꺼내서 사용하고 싶다면, 다음과 같이 사용하면 된다.
 
-        arb_port a1 (
-        .grant (arbif.grant),
-        .request (arbif.request),
-        .reset (arbif.reset),
-        .clk (arbif.clk)
-        );
+          arb_port a1 (
+          .grant (arbif.grant),
+          .request (arbif.request),
+          .reset (arbif.reset),
+          .clk (arbif.clk)
+          );
       
-❗ 문제 : interface 안에 있는 신호들은 기본적으로 양방향처럼 보임
+- ❗ 문제 : interface 안에 있는 신호들은 기본적으로 양방향처럼 보임
 
-arbif.grant = ...;   // testbench도 가능
-arbif.grant = ...;   // DUT도 가능 → 위험!
-✅ 해결: modport : “누가 무엇을 읽고/쓰는지”를 명확히 규정
+      arbif.grant = ...;   // testbench도 가능
+      arbif.grant = ...;   // DUT도 가능 → 위험!
+    
+- ✅ 해결: modport : “누가 무엇을 읽고/쓰는지”를 명확히 규정
 
-modport TEST (output request, reset, input grant, clk);
-modport DUT  (input request, reset, clk, output grant);
-●Interface의 Trade-off
+      modport TEST (output request, reset, input grant, clk);
+      modport DUT  (input request, reset, clk, output grant);
+
+- Interface의 Trade-off
