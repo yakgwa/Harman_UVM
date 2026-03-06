@@ -372,24 +372,24 @@ Formal Verification의 특징: 테스트벤치, 입력 벡터 없음, 결과는 
 4️⃣ Dynamic Arrays
 - 🔹 선언
 
-    int dyn[], d2[];
-    //크기 없음. 런타임에 결정된다.
+      int dyn[], d2[];
+      //크기 없음. 런타임에 결정된다.
   
 - 🔹 할당 / 초기화
-
-    dyn = new[5];        // 5개 할당
-    foreach (dyn[j])
-      dyn[j] = j;
+  
+      dyn = new[5];        // 5개 할당
+      foreach (dyn[j])
+        dyn[j] = j;
   
 - 🔹 확장 + Copy
 
-    //기존 dyn에 이어서
-    dyn = new[20](dyn);
-    //이는 기존 새 dyn[0..4]는 이전 값이 복사되며, dyn[5...19]는 기본값으로 초기화된다. (예:int면 0)
+      //기존 dyn에 이어서
+      dyn = new[20](dyn);
+      //이는 기존 새 dyn[0..4]는 이전 값이 복사되며, dyn[5...19]는 기본값으로 초기화된다. (예:int면 0)
   
 - 🔹 완전 재할당
-
-    dyn = new[100];  // 기존 데이터 전부 삭제됨
+  
+      dyn = new[100];  // 기존 데이터 전부 삭제됨
   
 - 🔹 메모리 해제
 
@@ -400,27 +400,27 @@ Formal Verification의 특징: 테스트벤치, 입력 벡터 없음, 결과는 
       
     - Queue 
     
-    program test;
-      initial begin
-        int j = 11;
-        int q[$] = {10, 12, 15};  //q[$]로 선언 시, insert, pop 등의 여러 queue 함수 사용 가능
+      program test;
+        initial begin
+          int j = 11;
+          int q[$] = {10, 12, 15};  //q[$]로 선언 시, insert, pop 등의 여러 queue 함수 사용 가능
+      
+          q.insert(1, j);   // {10, 11, 12, 15}
+          q.delete(2);      // {10, 11, 15}
+      
+          foreach (q[i])
+            $display(q[i]);
+      
+          q.push_front(16); // {16, 10, 11, 15}
+          j = q.pop_back;   // q = {16, 10, 11}, j = 15
+          q.push_back(17);  // {16, 10, 11, 17}
+          j = q.pop_front;  // q = {10, 11, 17}, j = 16
+      
+          foreach (q[i])
+            $display(q[i]);
+        end
+      endprogram
     
-        q.insert(1, j);   // {10, 11, 12, 15}
-        q.delete(2);      // {10, 11, 15}
-    
-        foreach (q[i])
-          $display(q[i]);
-    
-        q.push_front(16); // {16, 10, 11, 15}
-        j = q.pop_back;   // q = {16, 10, 11}, j = 15
-        q.push_back(17);  // {16, 10, 11, 17}
-        j = q.pop_front;  // q = {10, 11, 17}, j = 16
-    
-        foreach (q[i])
-          $display(q[i]);
-      end
-    endprogram
-  
 5️⃣ Associative Array
 - 기존 배열과 다르게, 인덱스가 0,1,2 같은 연속된 숫자일 필요가 없는 대신, key→value 형태로 저장하는 배열을 말한다. 따라서 인덱스 타입을 본인이 정해서 쓰는 배열이라고 생각할 수 있다. (대부분의 원소 값이 0인 Sparse Matrix에서 특히 유리한데, 0인 칸을 전부 메모리 먹는 기존 fixed array와 달리, associative는 값이 있는 칸만 키로 저장하기 때문이다.)
 - (단, 내부적으로 기존 fixed array보다 접근이 느릴 수 있다.)
