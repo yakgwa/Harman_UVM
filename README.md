@@ -1,7 +1,7 @@
 <div align="center">
 
 <!-- logo -->
-<img src="https://pegglass.com/wp-content/uploads/2020/07/semiconductor-1-1024.png" width="400"/> 
+<img src="https://www.silverchips.co.kr/images/soc-verification.jpg" width="400"/> 
 
 ### Harman UVM 🖍️
 
