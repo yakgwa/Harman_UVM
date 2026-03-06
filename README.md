@@ -352,6 +352,7 @@ Formal Verification의 특징: 테스트벤치, 입력 벡터 없음, 결과는 
       integer descend[0:2] = '{5,6,7};
       //반복 값 초기화
       integer samearr = '{4{8}}; //{8,8,8,8}
+    
       
     - Itertation에서 배열 활용 : for vs foreach
   
