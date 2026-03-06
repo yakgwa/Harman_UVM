@@ -874,88 +874,87 @@ task가 하나의 절차적 함수로 취급됨에 따라 return;시, 즉시 tas
     class Statistics;
     endclass
     
-1️⃣SystemVerilog 특징1 - 'extern' + '::'
+- 1️⃣ SystemVerilog 특징1 - 'extern' + '::'
+  - SystemVerilog에서는 클래스 외부에 함수 정의가 가능하지만, 반드시 extern 선언 + ClassName::function 형식을 사용해야 한다.
 
-SystemVerilog에서는 클래스 외부에 함수 정의가 가능하지만, 반드시 extern 선언 + ClassName::function 형식을 사용해야 한다.
+        class BusTran;
+            bit [31:0] addr, crc, data[8];
+            extern function void display();
+        endclass
 
-class BusTran;
-    bit [31:0] addr, crc, data[8];
-    extern function void display();
-endclass
+        function void BusTran::display();
+            $display("@%0d: BusTran addr=%h, crc=%h", addr, crc);
+            $write("\tdata[0-7]=");
+            foreach (data[i]) $write(data[i]);
+            $display();
+        endfunction
+    
+- 2️⃣SystemVerilog 특징2 - 'this' handle
+  - 클래스 맴버(위에서 정의한 string oname)과, function에서 정의한 argument의 이름이 충돌할 경우, 현재 겍체를 가리키는 this 핸들을 사용할 수 있다. 따라서 this는 함수가 호출되는 시점의 자기 자신의 객체를 가리키는 참조 변수에 해당한다.
 
-function void BusTran::display();
-    $display("@%0d: BusTran addr=%h, crc=%h", addr, crc);
-    $write("\tdata[0-7]=");
-    foreach (data[i]) $write(data[i]);
-    $display();
-endfunction
-2️⃣SystemVerilog 특징2 - 'this' handle
+        class Scoping;
+            string oname;
+        
+            function new(string oname);
+                this.oname = oname;
+            endfunction
+        endclass
+    
+- 3️⃣SystemVerilog 특징3 - static
+  - static으로 데이터 타입을 설정한 경우, 해당 멤버는 객체마다 하나가 아니라 '클래스 전체에서 단 하나만 존재'한다.
 
-클래스 맴버(위에서 정의한 string oname)과, function에서 정의한 argument의 이름이 충돌할 경우, 현재 겍체를 가리키는 this 핸들을 사용할 수 있다. 따라서 this는 함수가 호출되는 시점의 자기 자신의 객체를 가리키는 참조 변수에 해당한다.
-
-class Scoping;
-    string oname;
-
-    function new(string oname);
-        this.oname = oname;
-    endfunction
-endclass
-3️⃣SystemVerilog 특징3 - static
-
-static으로 데이터 타입을 설정한 경우, 해당 멤버는 객체마다 하나가 아니라 '클래스 전체에서 단 하나만 존재'한다.
-
-program test;
-
-class BusTran;
-    static int count = 0; // Number of objects created (클래스 변수)
-    int id;               // Unique instance ID (객체 변수)
-
-    function new;
-        id = count++;     // 현재 count를 id에 넣고, count 증가
-    endfunction
-endclass
-
-BusTran b1, b2;
-
-initial begin
-    b1 = new;  // First instance
-    b2 = new;  // Second instance
-    $display("Second id=%0d, count=%0d", b2.id, b2.count);
-end
-
-endprogram
-
-/*
-(1) 시작 시점
-BusTran.count = 0
-b1 = null
-b2 = null
-
-(2) b1 = new;
-count = 0
-id = 0
-count++ → count = 1
-따라서
-b1.id = 0
-BusTran.count = 1
-
-(3) b2 = new;
-count = 1
-id = 1
-count++ → count = 2
-따라서
-b2.id = 1
-BusTran.count = 2 -> b2.count = b1.count
-*/
-
-/*
-최종 정리
-BusTran class
- └─ static count = 2   ← 모든 객체가 공유
-
-b1 ── id = 0
-b2 ── id = 1
-*/
+        program test;
+        
+        class BusTran;
+            static int count = 0; // Number of objects created (클래스 변수)
+            int id;               // Unique instance ID (객체 변수)
+        
+            function new;
+                id = count++;     // 현재 count를 id에 넣고, count 증가
+            endfunction
+        endclass
+        
+        BusTran b1, b2;
+        
+        initial begin
+            b1 = new;  // First instance
+            b2 = new;  // Second instance
+            $display("Second id=%0d, count=%0d", b2.id, b2.count);
+        end
+        
+        endprogram
+        
+        /*
+        (1) 시작 시점
+        BusTran.count = 0
+        b1 = null
+        b2 = null
+        
+        (2) b1 = new;
+        count = 0
+        id = 0
+        count++ → count = 1
+        따라서
+        b1.id = 0
+        BusTran.count = 1
+        
+        (3) b2 = new;
+        count = 1
+        id = 1
+        count++ → count = 2
+        따라서
+        b2.id = 1
+        BusTran.count = 2 -> b2.count = b1.count
+        */
+        
+        /*
+        최종 정리
+        BusTran class
+         └─ static count = 2   ← 모든 객체가 공유
+        
+        b1 ── id = 0
+        b2 ── id = 1
+        */
 Connecting the Testbench and Design
 
 Testbench - DUT 연결을 안전하고, 재사용 가능하고, 타이밍 버그 없이 만들기 위해 단순 포트 연결이 아닌 추가 개념이 확장되었다. 두 가지 코드를 비교해보자.
