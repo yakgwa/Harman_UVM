@@ -504,7 +504,7 @@ EX)
         end
     
 | i | 이진 | on[i]에 저장되는 값 (LSB) |
-| :--- | :--- | :--- |
+| :---: | :---: | :---: |
 | **0** | **0000** | **0** |
 | **1** | **0001** | **1** |
 | **2** | **0010** | **0** |
@@ -524,23 +524,23 @@ EX)
       tq = f.unique;   // 중복 제거(유일한 값들)
       count = d.sum with (item > 7); //d 배열 원소를 돌면서, 조건을 만족하는 원소 대상으로 sum
       
-EX) find 
+  - EX) find 
 
-    program test;
-      initial begin
-        int d[] = '{9, 1, 8, 3, 4, 4}, tq[$];
-        tq = d.find with (item >3); //{9,8,4,4}
-        foreach(tq[i])
-        $display(tq[i]);
-      end
-    endprogram
-    
-    //find 계열 구문 추가 예시
-    tq = d.find_index with (item > 3);  // {0,2,4}, 값 말고 인덱스를 찾는다.
-    tq = d.find_first with (item > 99);   // {} 없음, 조건을 만족하는 첫 값 
-    tq = d.find_first_index with (item==8); // {2}, 조건을 만족하는 첫 번째 인덱스
-    tq = d.find_last with (item==4);        // {4}, 조건을 만족하는 마지막 값
-    tq = d.find_last_index with (item==4);  // {5}, 조건을 만족하는 마지막 인덱스
+        program test;
+          initial begin
+            int d[] = '{9, 1, 8, 3, 4, 4}, tq[$];
+            tq = d.find with (item >3); //{9,8,4,4}
+            foreach(tq[i])
+            $display(tq[i]);
+          end
+        endprogram
+        
+        //find 계열 구문 추가 예시
+        tq = d.find_index with (item > 3);  // {0,2,4}, 값 말고 인덱스를 찾는다.
+        tq = d.find_first with (item > 99);   // {} 없음, 조건을 만족하는 첫 값 
+        tq = d.find_first_index with (item==8); // {2}, 조건을 만족하는 첫 번째 인덱스
+        tq = d.find_last with (item==4);        // {4}, 조건을 만족하는 마지막 값
+        tq = d.find_last_index with (item==4);  // {5}, 조건을 만족하는 마지막 인덱스
 
 6️⃣ typedef, parameter
 typedef, parameter는 define과 다르게, 컴파일러가 의미를 이해하여 심볼 테이블에 등록하고, 중복이 발생 할 경우에는 에러를 띄움으로써 언어 차원에서 타입/상수로 관리한다.
