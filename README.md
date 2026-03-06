@@ -737,30 +737,27 @@ task가 하나의 절차적 함수로 취급됨에 따라 return;시, 즉시 tas
     - 변수(property) + 함수/태스크(method)를 한 덩어리로 묶음
     - Verilog의 module과 개념적으로 가장 유사 (단, module은 하드웨어 구조이지만, class는 검증용 소프트웨어 객체라고 이해하면 된다.)
 
-        class BusTran;
-          int addr;
-          function void display();
-          endfunction
-        endclass
+          class BusTran;
+            int addr;
+            function void display();
+            endfunction
+          endclass
 
   - 2️⃣ Object : 클래스로부터 만들어진 실제 인스턴스
+    - class 자체는 설계도
+    - new로 만들어진 것이 object
+    - module instantiation ↔ class object 생성
 
-class 자체는 설계도
+          BusTran bt;
+          bt = new();
 
-new로 만들어진 것이 object
+  - 3️⃣ Handle : 객체를 가리키는 참조(reference)
+    - a는 객체 그 자체 ❌
+    - 객체를 가리키는 핸들(handle) ⭕
 
-module instantiation ↔ class object 생성
-
-BusTran bt;
-bt = new();
-3️⃣ Handle : 객체를 가리키는 참조(reference)
-
-a는 객체 그 자체 ❌
-
-객체를 가리키는 핸들(handle) ⭕
-
-BusTran a;
-a = new();
+          BusTran a;
+          a = new();
+      
 4️⃣ Property : 클래스 안에 있는 데이터(변수)
 
 class BusTran;
