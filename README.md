@@ -158,7 +158,7 @@ SystemVerilog 위에서 돌아가는 "표준 검증 방법론 + 클래스 라이
   - 실제 칩이 나오기 전에 HW/SW 통합 검증
   - Simulation 이후, 실리콘 이전 단계로서, 칩처럼 행동하는 시스템을 미리 만들어 검증하는 방법
 
-<div align="center"><img src="https://github.com/yakgwa/Harman_UVM/blob/main/Picture/image_2.png" width="400"/>
+<div align="center"><img src="https://github.com/yakgwa/Harman_UVM/blob/main/picture/image_2.png" width="400"/>
 
 <div align="left">
 
@@ -211,7 +211,7 @@ Formal Verification의 특징: 테스트벤치, 입력 벡터 없음, 결과는 
   - CTS, Scan 삽입, ECO 이후 필수
   - Systemverilog(UVM)-Based Verification : 권장하는 Testbench 구조
 
-<div align="center"><img src="https://github.com/yakgwa/Harman_UVM/blob/main/Picture/image_3.png" width="400"/>
+<div align="center"><img src="https://github.com/yakgwa/Harman_UVM/blob/main/picture/image_3.png" width="400"/>
 
 <div align="left">
 
