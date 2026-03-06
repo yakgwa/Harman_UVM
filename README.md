@@ -1084,6 +1084,7 @@ Testbench - DUT 연결을 안전하고, 재사용 가능하고, 타이밍 버그
       modport DUT  (input request, reset, clk, output grant);
 
 - Interface의 Trade-off
+- 
 | ✔️ Interface가 좋은 경우 | ❌ 별로인 경우 |
 | :---: | :---: |
 | **AMBA, arbiter 같은 반복 사용 프로토콜** | **단 1번 쓰는, 아주 단순한 point-to-point 연결** |
