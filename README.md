@@ -42,7 +42,7 @@
 - 즉, CRV는 Verification Engineer가 의미 있는 제약을 정의하고, 그 안에서 stimulus를 랜덤으로 생성해 설계를 검증하는 방법이다.
 - 의미 있는 제약이란? 이 DUT가 가질 수 있는 의미 있는 상태 공간으로, Spec Behavior(기능, 정상 동작 시나리오), Corner Cases(경곗값, 불연속, 에러조건) 등을 기준으로 정의되는 제약이다.
 
-<div align="center"><img src="https://github.com/yakgwa/Harman_UVM/blob/main/picture/image_1.png" width="400"/>
+<div align="center"><img src="https://github.com/yakgwa/Harman_UVM/blob/main/Picture/image_1.png" width="400"/>
 
 <div align="left">
 
@@ -158,7 +158,7 @@ SystemVerilog 위에서 돌아가는 "표준 검증 방법론 + 클래스 라이
   - 실제 칩이 나오기 전에 HW/SW 통합 검증
   - Simulation 이후, 실리콘 이전 단계로서, 칩처럼 행동하는 시스템을 미리 만들어 검증하는 방법
 
-<div align="center"><img src="https://github.com/yakgwa/Harman_UVM/blob/main/picture/image_2.png" width="400"/>
+<div align="center"><img src="https://github.com/yakgwa/Harman_UVM/blob/main/Picture/image_2.png" width="400"/>
 
 <div align="left">
 
@@ -211,12 +211,11 @@ Formal Verification의 특징: 테스트벤치, 입력 벡터 없음, 결과는 
   - CTS, Scan 삽입, ECO 이후 필수
   - Systemverilog(UVM)-Based Verification : 권장하는 Testbench 구조
 
-<div align="center"><img src="https://github.com/yakgwa/Harman_UVM/blob/main/picture/image_3.png" width="400"/>
+<div align="center"><img src="https://github.com/yakgwa/Harman_UVM/blob/main/Picture/image_3.png" width="400"/>
 
 <div align="left">
 
 1️⃣ Scenario 레벨 – Generator
-
 - 🔹 Generator
   - 무엇을 시험할지 결정
   - Transaction(패킷, 명령, 요청)을 생성
@@ -226,75 +225,39 @@ Formal Verification의 특징: 테스트벤치, 입력 벡터 없음, 결과는 
   - 📌 프로토콜 디테일 모름
 
 2️⃣ Functional 레벨 – Agent / Scoreboard / Checker
+- 🔹 Agent (중심 허브)
+  - Generator에서 Transaction을 받음
+  - Driver + Monitor를 묶은 개념
+  - “이 인터페이스 담당자”
 
-🔹 Agent (중심 허브)
+- 🔹 Scoreboard
+  - Golden Model
+  - “이 입력이면, 이 출력이 나와야 한다”를 계산
+  - DUT 결과와 비교
 
-Generator에서 Transaction을 받음
-
-Driver + Monitor를 묶은 개념
-
-“이 인터페이스 담당자”
-
-​
-
-🔹 Scoreboard
-
-Golden Model
-
-“이 입력이면, 이 출력이 나와야 한다”를 계산
-
-DUT 결과와 비교
-
-​
-
-🔹 Checker
-
-규칙 기반 검사
-
-순서, 일관성, 프로토콜 규칙 등
-
-👉 “맞는 값인가?”뿐 아니라
-
-👉 “맞는 방식으로 나왔는가?”
-
-​
+- 🔹 Checker
+  - 규칙 기반 검사
+  - 순서, 일관성, 프로토콜 규칙 등
+  - 👉 “맞는 값인가?”뿐 아니라
+  - 👉 “맞는 방식으로 나왔는가?”
 
 3️⃣ Command (=Signal) 레벨 – Driver / Monitor / Assertions
+- 🔹 Driver
+  - Transaction → 실제 핀 신호
+  - 타이밍, 핸드셰이크, 프로토콜 구현
 
-🔹 Driver
+- 🔹 Monitor
+  - DUT 신호를 관찰
+  - 다시 트랜잭션 형태로 복원
+  - Scoreboard / Checker로 전달
 
-Transaction → 실제 핀 신호
-
-타이밍, 핸드셰이크, 프로토콜 구현
-
-​
-
-🔹 Monitor
-
-DUT 신호를 관찰
-
-다시 트랜잭션 형태로 복원
-
-Scoreboard / Checker로 전달
-
-​
-
-🔹 Assertions
-
-DUT에 직접 붙어 있음
-
-“이 순간 이 조건은 항상 성립해야 한다”
-
-실시간 위반 감지
-
-​
+- 🔹 Assertions
+  - DUT에 직접 붙어 있음
+  - “이 순간 이 조건은 항상 성립해야 한다”
+  - 실시간 위반 감지
 
 4️⃣ DUT (Design Under Test)
-
-검증 대상 설계
-
-Testbench와 명확히 분리됨
-
-​
+- 검증 대상 설계
+- Testbench와 명확히 분리됨
 
 따라서 현대의 Testbench는 Constrainted Random 기반 Transaction-level Testbench로, 시나리오 수준에서 생성된 자극을 Driver가 신호로 변환하여 DUT에 인가하고, Monitor/Scoreboard/Asssertion을 통해 자동 검증하는 구조를 이룬다.
