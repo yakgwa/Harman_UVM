@@ -138,7 +138,7 @@ SystemVerilog 위에서 돌아가는 "표준 검증 방법론 + 클래스 라이
   - RTL/게이트 모델을 직접 시뮬레이션
   - Testbench가 중심 역할 수행
 
--2️⃣ Event-driven Simulators
+- 2️⃣ Event-driven Simulators
   - 신호 변화(event)가 있을 때만 동작
   - 불필요한 계산을 줄여 효율적
   - 일반적인 RTL 기능 검증에 사용
@@ -153,129 +153,77 @@ SystemVerilog 위에서 돌아가는 "표준 검증 방법론 + 클래스 라이
 
 ​✅ Rapid Prototyping & Emulation
 
-1. Rapid Prototyping Systems
+- 1️⃣ Rapid Prototyping Systems
+  - RTL과 실제 펌웨어(Object Code) 를 FPGA/ICE 환경에서 결합
+  - 실제 칩이 나오기 전에 HW/SW 통합 검증
+  - Simulation 이후, 실리콘 이전 단계로서, 칩처럼 행동하는 시스템을 미리 만들어 검증하는 방법
 
-RTL과 실제 펌웨어(Object Code) 를 FPGA/ICE 환경에서 결합
+<div align="center"><img src="https://github.com/yakgwa/Mini_NPU_Ver2/blob/main/Picture/image_2.png" width="400"/>
 
-실제 칩이 나오기 전에 HW/SW 통합 검증
+<div align="left">
 
-Simulation 이후, 실리콘 이전 단계로서, 칩처럼 행동하는 시스템을 미리 만들어 검증하는 방법
+- 2️⃣ Emulation Systems
+  - 대형 하드웨어 에뮬레이터 사용
+  - RTL을 하드웨어로 가속 실행
+  - 대규모 SoC, 장시간 시나리오 검증에 사용
 
-
-2. Emulation Systems
-
-대형 하드웨어 에뮬레이터 사용
-
-RTL을 하드웨어로 가속 실행
-
-대규모 SoC, 장시간 시나리오 검증에 사용
-
-​
-
-Static Technologies
-
+​​✅ Static Technologies
 시뮬레이션 없이 설계 문제를 찾아내는 기법들
 
-​
+- 1️⃣ Inspection
+  - 사람이 직접 검토하는 방식으로, 초기 단계에서 매우 효과적
+  - 1단계, Design Inspection : 사양, 아키텍처, 인터페이스 검토
+  - 2단계, Code Inspection : RTL 코드 리뷰
 
-1. Inspection
+- 2️⃣ Lint Checking
+  - 툴을 이용한 RTL 분석.
+  - Synthesizer의 preprocessor 역할
+  - RTL purification (RTL DRC) : syntax 오류, semantic(의미) 오류
+  - Rule-based checking : 기본 규칙 +  사용자 정의 규칙 체크
 
-사람이 직접 검토하는 방식으로, 초기 단계에서 매우 효과적
+- 3️⃣ Static Timing Analysis (STA)
+  - 시뮬레이션 없이 타이밍 분석
+  - 입력 패턴 불필요
+  - Worst-Case 기준
+  - 검증 항목 : Setup violation, Hold violation, Path delay, Clock skew 등
 
-1단계, Design Inspection : 사양, 아키텍처, 인터페이스 검토
+​​✅ Physical Verification and Analysis
+  - 물리적 구현 관점의 검증
+  - 레이아웃 및 공정 수준에서의 검증 항목들:Timing, Signal Integrity, Crosstalk, IR drop, Electro-migration, Power analysis, Process antenna effects, Phase shift mask, Optical proximity, correction (OPC)
 
-2단계, Code Inspection : RTL 코드 리뷰
-
-​
-
-2. Lint Checking
-
-툴을 이용한 RTL 분석.
-
-Synthesizer의 preprocessor 역할
-
-RTL purification (RTL DRC) : syntax 오류, semantic(의미) 오류
-
-Rule-based checking : 기본 규칙 +  사용자 정의 규칙 체크
-
-​
-
-3. Static Timing Analysis (STA)
-
-시뮬레이션 없이 타이밍 분석
-
-입력 패턴 불필요
-
-Worst-Case 기준
-
-검증 항목 : Setup violation, Hold violation, Path delay, Clock skew 등
-
-​
-
-Physical Verification and Analysis
-
-물리적 구현 관점의 검증
-
-레이아웃 및 공정 수준에서의 검증 항목들:Timing, Signal Integrity, Crosstalk, IR drop, Electro-migration, Power analysis, Process antenna effects, Phase shift mask, Optical proximity, correction (OPC)
-
-​
-
-Formal Technologies
-
+✅ Formal Technologies
 시뮬레이션 없이, 수학적·논리적으로 증명하는 검증
-
 Formal Verification의 특징: 테스트벤치, 입력 벡터 없음, 결과는 증명 또는 반례
 
-​
+- 1️⃣ Theorem Proving
+  - 공리와 규칙을 이용한 수학적 증명
+  - 자동화 어려움, 종료 보장 없음
+  - 항공/우주, 의료, 군수 등 고신뢰 시스템에서 사용
 
-1. Theorem Proving
+- 2️⃣ Model (Property) Checking
+  - 모든 가능한 상태를 탐색
+  - FSM, concurrent 시스템 대상
+  - 실무에서 가장 많이 사용되는 Formal 기법
+    
+- 3️⃣ Equivalence Checking
+  - 두 설계가 논리적으로 동일한지 확인
+  - RTL ↔ Gate
+  - CTS, Scan 삽입, ECO 이후 필수
+  - Systemverilog(UVM)-Based Verification : 권장하는 Testbench 구조
 
-공리와 규칙을 이용한 수학적 증명
+<div align="center"><img src="https://github.com/yakgwa/Mini_NPU_Ver2/blob/main/Picture/image_3.png" width="400"/>
 
-자동화 어려움, 종료 보장 없음
-
-항공/우주, 의료, 군수 등 고신뢰 시스템에서 사용
-
-​
-
-2. Model (Property) Checking
-
-모든 가능한 상태를 탐색
-
-FSM, concurrent 시스템 대상
-
-실무에서 가장 많이 사용되는 Formal 기법
-
-​
-
-3. Equivalence Checking
-
-두 설계가 논리적으로 동일한지 확인
-
-RTL ↔ Gate
-
-CTS, Scan 삽입, ECO 이후 필수
-
-Systemverilog(UVM)-Based Verification : 권장하는 Testbench 구조
-
+<div align="left">
 
 1️⃣ Scenario 레벨 – Generator
 
-🔹 Generator
-
-무엇을 시험할지 결정
-
-Transaction(패킷, 명령, 요청)을 생성
-
-Constrained Random의 시작점
-
-👉 여기서는 “read/write 섞어라”, “에러 상황도 포함해라” 같은 의도만 표현
-
-📌 신호 타이밍 모름
-
-📌 프로토콜 디테일 모름
-
-​
+- 🔹 Generator
+  - 무엇을 시험할지 결정
+  - Transaction(패킷, 명령, 요청)을 생성
+  - Constrained Random의 시작점
+  - 👉 여기서는 “read/write 섞어라”, “에러 상황도 포함해라” 같은 의도만 표현
+  - 📌 신호 타이밍 모름
+  - 📌 프로토콜 디테일 모름
 
 2️⃣ Functional 레벨 – Agent / Scoreboard / Checker
 
