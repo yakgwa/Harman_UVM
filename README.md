@@ -296,8 +296,9 @@ Formal Verification의 특징: 테스트벤치, 입력 벡터 없음, 결과는 
 - 즉, procedural + continuous, always 블록 여러 개 사용은 불가능하다.
 
     // ❌ 잘못된 예
-    always @(*) a = b;
-    assign a = c;   // multiple driver → 에러
+  
+        always @(*) a = b;
+        assign a = c;   // multiple driver → 에러
   
 2️⃣ Two-State Variables (2-state vs 4-state)
 | 타입 | 상태 |
