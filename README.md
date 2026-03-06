@@ -42,6 +42,10 @@
 - 즉, CRV는 Verification Engineer가 의미 있는 제약을 정의하고, 그 안에서 stimulus를 랜덤으로 생성해 설계를 검증하는 방법이다.
 - 의미 있는 제약이란? 이 DUT가 가질 수 있는 의미 있는 상태 공간으로, Spec Behavior(기능, 정상 동작 시나리오), Corner Cases(경곗값, 불연속, 에러조건) 등을 기준으로 정의되는 제약이다.
 
+<div align="center"><img src="https://github.com/yakgwa/Mini_NPU_Ver2/blob/main/Picture/image_1.png" width="400"/>
+
+<div align="left">
+
 - Automatic Verification 
   - 1️⃣ Golden Model
     - DUT의 이상적인 동작을 소프트웨어/모델로 구현
@@ -74,128 +78,80 @@
 
 6️⃣ Verification ≠ Simulation ≠ Testing
 
-구분
+|구분|의미|
+|------|---|---|
+|**Simulation**|**파형을 돌려보는 행위**|
+|**Testing**|**이 설계로 제조됐을 때, 불량 없이 동작하는가**|
+|**Verification**|**이 모델이 내가 의도한 기능을 정확히 구현하는가**|
 
-의미
-
-Simulation
-
-파형을 돌려보는 행위
-
-Testing
-
-이 설계로 제조됐을 때, 불량 없이 동작하는가
-
-Verification
-
-이 모델이 내가 의도한 기능을 정확히 구현하는가
-
-즉, Verification은 Testbench + Automatic Check + Coverage를 포함한 시스템으로 이해할 수 있다.
-
-Verification Engineer ≠ Test Engineer
-
-SystemVerilog / UVM → Verification
-
-Scan, ATPG, BIST→ Testing
+- 즉, Verification은 Testbench + Automatic Check + Coverage를 포함한 시스템으로 이해할 수 있다.
+- Verification Engineer ≠ Test Engineer
+- SystemVerilog / UVM → Verification
+- Scan, ATPG, BIST→ Testing
 
 참고 : Manufacturing Test Flow
 
-[ Scan ] - 테스트 가능성을 확보하는 구조
-  내부 상태 접근 가능하게 함
-        ↓
-[ ATPG ] - 그 구조를 활용해 결함 검출 패턴 생성
-  결함 드러내는 패턴 생성
-        ↓
-[ ATE 실행 ]
-  실리콘 검사
-        ↓
-[ BIST (병행/대체) ] - 테스트를 칩 내부로 가져와 제조 테스트 효율을 높임
-  내부에서 고속 자가 검사
+    [ Scan ] - 테스트 가능성을 확보하는 구조
+      내부 상태 접근 가능하게 함
+            ↓
+    [ ATPG ] - 그 구조를 활용해 결함 검출 패턴 생성
+      결함 드러내는 패턴 생성
+            ↓
+    [ ATE 실행 ]
+      실리콘 검사
+            ↓
+    [ BIST (병행/대체) ] - 테스트를 칩 내부로 가져와 제조 테스트 효율을 높임
+      내부에서 고속 자가 검사
 ​
+7️⃣ SystemVerilog가 특히 유리한 지점
+- ✅ 블록 레벨 / IP 레벨
+  - 입력 시나리오를 예측하기 어려움
+  - 랜덤 검증의 효율 극대화
+  - ❌ 시스템/소프트웨어 레벨
+  - 이미 시나리오가 정해진 경우가 많음
+  - C/C++ 기반 검증이 더 효율적일 수 있음
 
-7. SystemVerilog가 특히 유리한 지점
-
-✅ 블록 레벨 / IP 레벨
-
-입력 시나리오를 예측하기 어려움
-
-랜덤 검증의 효율 극대화
-
-❌ 시스템/소프트웨어 레벨
-
-이미 시나리오가 정해진 경우가 많음
-
-C/C++ 기반 검증이 더 효율적일 수 있음
-
-​
-
-8. UVM은 여기서 무엇인가?
-
+8️⃣ UVM은 여기서 무엇인가?
 SystemVerilog 위에서 돌아가는 "표준 검증 방법론 + 클래스 라이브러리"이다.
+- 새로운 언어 ❌
+- SystemVerilog 코드 + 프레임워크
+- uvm_macros.svh를 include 해서 사용
 
-새로운 언어 ❌
-
-SystemVerilog 코드 + 프레임워크
-
-uvm_macros.svh를 include 해서 사용
-
-간단한 검증 흐름 정리
- → Constrained Random Stimulus 생성
- → Golden Model / Assertion으로 Automatic Check
- → Functional Coverage로 Verication 완성도 판단
-Verification Methodologies
-
+    간단한 검증 흐름 정리
+     → Constrained Random Stimulus 생성
+     → Golden Model / Assertion으로 Automatic Check
+     → Functional Coverage로 Verication 완성도 판단
+  
+### Verification Methodologies
 여러 검증 방법 중에서 SystemVerilog는 Simulation 기반 기능 검증을 수행하기 위한 언어이다.
-
 특히 다음과 같은 현대적 검증 기법들을 직접적으로 지원한다.
+- Constrained Random Verification
+- Functional Coverage
+- Golden Model / Assertion 기반 검증
+- 다만 이는 SystemVerilog라는 ‘언어’에 초점을 둔 관점이며, 실제 반도체 설계 검증에서는 이보다 훨씬 다양한 검증 방법론(Verification Methodologies) 이 함께 사용된다. 이에 따라, 전체적인 검증 방법론의 큰 지도를 살펴볼 필요가 있다.
 
-Constrained Random Verification
+​✅ Simulation Technologies
+- 시뮬레이션을 기반으로 한 검증 기법들 – Testbench가 핵심
+- RTL 또는 그 추상 모델을 실행하여 설계의 기능적 올바름을 검증하는 방식
 
-Functional Coverage
+- 1️⃣ Hardware Simulation
+  - RTL/게이트 모델을 직접 시뮬레이션
+  - Testbench가 중심 역할 수행
 
-Golden Model / Assertion 기반 검증
+-2️⃣ Event-driven Simulators
+  - 신호 변화(event)가 있을 때만 동작
+  - 불필요한 계산을 줄여 효율적
+  - 일반적인 RTL 기능 검증에 사용
 
-다만 이는 SystemVerilog라는 ‘언어’에 초점을 둔 관점이며, 실제 반도체 설계 검증에서는 이보다 훨씬 다양한 검증 방법론(Verification Methodologies) 이 함께 사용된다. 이에 따라, 전체적인 검증 방법론의 큰 지도를 살펴볼 필요가 있다.
+- 3️⃣ Cycle-based Simulators
+  - 클록 엣지 단위로 한 사이클씩 동작
+  - 동기식 회로(synchronous design)에 적합
+  - 이벤트 정확도는 낮지만 속도는 빠름
 
-​
+- 4️⃣ Enhancing Simulation Speed
+  - 정확도 ↔ 속도 trade-off에 따라 RTL, BFM, ISS, C 등의 모델을 선택하는 전략 방법론
 
-Simulation Technologies
-
-시뮬레이션을 기반으로 한 검증 기법들 – Testbench가 핵심
-
-RTL 또는 그 추상 모델을 실행하여 설계의 기능적 올바름을 검증하는 방식
-
-​
-
-1. Hardware Simulation
-
-RTL/게이트 모델을 직접 시뮬레이션
-
-Testbench가 중심 역할 수행
-
-2. Event-driven Simulators
-
-신호 변화(event)가 있을 때만 동작
-
-불필요한 계산을 줄여 효율적
-
-일반적인 RTL 기능 검증에 사용
-
-3. Cycle-based Simulators
-
-클록 엣지 단위로 한 사이클씩 동작
-
-동기식 회로(synchronous design)에 적합
-
-이벤트 정확도는 낮지만 속도는 빠름
-
-4. Enhancing Simulation Speed
-
-정확도 ↔ 속도 trade-off에 따라 RTL, BFM, ISS, C 등의 모델을 선택하는 전략 방법론
-
-​
-
-Rapid Prototyping & Emulation
+​✅ Rapid Prototyping & Emulation
 
 1. Rapid Prototyping Systems
 
