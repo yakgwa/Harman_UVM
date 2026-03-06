@@ -635,4 +635,455 @@ EX) String 예제
       endtask
     endprogram
 
+## 📝 About Verification : Procedural Statements and Routines & OOP & Connecting the Testbench and Design
 
+### Procedural Statements and Routines
+
+SystemVerilog는 Verilog의 Procedural Statement(절차문)과 Task/Function을 C/C++ 스타일 + 검증 친화적인 구조로 확장하였다.
+
+👉 “Verilog vs SystemVerilog 문법 차이”
+- ✅ for문에서 변수 선언 가능
+
+    for (int i = 0; i < 10; ++i)
+        array[i] = i;
+    
+- ✅ do…while 문 지원
+
+    do
+        sum += array[j];
+    while (j--);
+
+- ✅ begin : label / end : label (최신 verilog는 모두 지원한다고 알고 있)
+
+    begin : example
+       ...
+    end : example
+  
+👉 “C/C++ vs SystemVerilog 루프 제어 스타일 차이”
+
+- 📌C/C++ 스타일 루프 제어
+
+    while (...) begin
+        switch (...) begin
+            case ...
+                continue; //현재 반복만 스킵하고 loop의 다음 iteration으로 넘어간다.
+            case ...
+                break;   //loop 자체를 탈출한다. (switch - case 구문도 포함)
+        endcase
+    end
+
+- 📌SystemVerilog 스타일 루프 제어
+    - Verilog/SystemVerilog는 C/C++과 달리, case 구문으로 들어가면 해당 변수에 대해 만족하는 특정 구문만 실행된다. 따라서 Verilog/SystemVerilog에서는 while begin - case - end 구문이 있을 때, 특정 case에서 break 구문을 만나게 되면, while문 전체를 빠져나오게 된다는 차이점이 있다.
+
+
+👉 “Verilog vs SystemVerilog Task/Function 구문 차이”
+| Task | Function |
+| :---: | :---: |
+| **시간 소모 가능** | **❌ 시간 소모 불가** |
+| **#delay, wait, @(posedge clk) 가능** | **❌ task 호출 불가** |
+| **blocking operation 가능** | **✅ 반드시 값 반환 (Verilog 기준)** | 
+
+🚀 SystemVerilog 개선점
+
+✅ void function 지원
+
+이를 통해, 반환 값 없이도 함수 사용이 가능하며, task처럼 쓰되, 시간은 소비하지 않는 '순수 계산/출력용 함수' 개념이 명확해졌다.
+
+function void print_state();
+    $display(...);
+endfunction
+✅task/function 내부 begin...end 생략 가능
+
+task multiple_lines;
+    $display("First line");
+    $display("Second line");
+endtask
+✅task 구문에서 return
+
+task load_array(int len, ref int array[]);
+    if (len <= 0) begin
+        $display("Bad len");
+        return;
+    end
+    ...
+endtask
+task가 하나의 절차적 함수로 취급됨에 따라 return;시, 즉시 task 구문이 종료된다.
+
+​
+
+👉 timescale의 구조적 문제 해결
+
+기존 verilog 방식은 `timescale 1ns / 1ps로 timescale을 정의하는데, 예컨대, 파일 A가 1ns/1ps, 파일 B가 10ns/1ns이면, 컴파일 순서가 바뀜에 따라 시뮬레이션 결과가 달라질 수 있다. 이에 따라 SystemVerilog는 다음과 같이 개선하였다.
+
+module timing;
+    timeunit 1ns;
+    timeprecision 1ps;
+​
+
+👉 Call by Reference를 지원하는 SystemVerilog
+
+task bus_read(
+    input logic [31:0] addr, //input datatype : Call by value
+    ref   logic [31:0] data  //ref datatype : Call by Reference
+);
+버스의 read/write 같은 동작은 값을 받아오는 행위이므로, ref를 사용하게 되면, C의 포인터 전달과 유사하게 여러 output을 깔끔하게 처리할 수 있다.
+
+Basic OOP
+
+모듈 중심의 Verilog 사고에서 객체(class) 중심의 검증 사고로 전환 SystemVerilog의 OOP(클래스)에 관한 문법은 상당히 중요하다.
+
+​
+
+●용어 정리
+
+1️⃣ Class : 데이터 + 동작을 묶은 설계 블록
+
+변수(property) + 함수/태스크(method)를 한 덩어리로 묶음
+
+Verilog의 module과 개념적으로 가장 유사 (단, module은 하드웨어 구조이지만, class는 검증용 소프트웨어 객체라고 이해하면 된다.)
+
+class BusTran;
+  int addr;
+  function void display();
+  endfunction
+endclass
+2️⃣ Object : 클래스로부터 만들어진 실제 인스턴스
+
+class 자체는 설계도
+
+new로 만들어진 것이 object
+
+module instantiation ↔ class object 생성
+
+BusTran bt;
+bt = new();
+3️⃣ Handle : 객체를 가리키는 참조(reference)
+
+a는 객체 그 자체 ❌
+
+객체를 가리키는 핸들(handle) ⭕
+
+BusTran a;
+a = new();
+4️⃣ Property : 클래스 안에 있는 데이터(변수)
+
+class BusTran;
+  int addr;
+  logic [31:0] data;
+endclass
+5️⃣ Method : 객체의 동작을 정의하는 코드
+
+function void display();
+  $display("%0d", addr);
+endfunction
+6️⃣ Prototype : task/function의 선언부
+
+function void display();
+👉 SystemVerilog Class
+
+class BusTran;
+    logic [31:0] addr, crc, data[8];
+    function new;
+        addr = 3;
+        foreach (data[i])
+            data[i] = 5;
+    endfunction
+endclass
+
+BusTran b;
+b는 BusTran 타입의 핸들(handle)
+
+아직 어떤 객체도 가리키지 않음
+
+내부 상태: null (즉, b==null → b.display()하면 런타임 에러)
+
+b = new;  //c++ 대응 개념 : BusTran* b = new BusTran();
+new가 하는 일
+
+힙(heap)에 BusTran 객체 생성
+
+생성자(constructor) new() 실행
+
+그 객체의 주소를 핸들 b에 저장
+
+​
+
+이제서야 비로소 Instantiation이 일어나면서, 하나의 Object가 생성된다. Object가 생성되면서, 위에서 정의한 function new; 가 자동 호출되면서 객체의 초기 상태를 정의하게 된다.
+
+​
+
+● 개념 차이 : new() vs new[]
+
+✅ new() : Class Object Instantiation
+
+BusTran b;
+b = new;
+b = new(10);   // 생성자 인자
+✅ new[] : 동적 배열(dynamic array) 생성
+
+int dyn[];
+dyn = new[5];
+🔥 핵심 오해 포인트 정리1  -  new()와 new[]의 차이를 명확히 보여주는 예제
+
+BusTran arr[];     // ❗ 클래스 핸들 배열
+arr = new[4];      // 핸들 4개 생성
+
+/*
+이 상태에서:
+arr[0] == null
+arr[1] == null
+…
+❗ 객체는 하나도 없음
+*/
+
+foreach (arr[i])
+    arr[i] = new;  // ← 여기서 진짜 객체 생성
+🔥 핵심 오해 포인트 정리2 - 객체 생성 과정에서 주의점
+
+BusTran b1, b2;   // handle 두 개 선언
+b1 = new;         // 첫 번째 객체 생성
+b2 = b1;          // 같은 객체를 가리킴
+/*
+b1 ─┐
+    ├──> object #1
+b2 ─┘
+*/
+
+b1 = new;         // 두 번째 객체 생성
+/*
+b1 ───> object #2
+b2 ───> object #1
+*/
+🔥 핵심 오해 포인트 정리2 - Garbage Collection의 정확한 의미(Deallocation)
+
+BusTran b;
+b = new;     // 첫 번째 객체
+//object #1 생성
+//참조 핸들 수 = 1
+
+b = new;     // 두 번째 객체 (첫 번째는?)
+//object #2 생성
+//b가 object #1을 더 이상 가리키지 않음
+//따라서 object #1에 대해서는 참조 핸들 수가 없으므로 garbage collection 대상에 포함된다.
+
+b = null;    // 두 번째 객체는?
+//만약 b=null 해버리면 b는 아무런 object도 가리키지 않게되면서 objct #2 역시 참조 핸들 수가 사라진다.
+🔥 핵심 오해 포인트 정리3 - Compilation Order (아직 정의되지 않은 클래스를 쓰고 싶을 때)
+
+(단, 컴파일러에 따라 typedef 선언 없이도 되는 경우가 있지만, 표준적으로는 unsafe하므로, 이식성을 위해 항상 쓰는 것이 정석이다.)
+
+typedef class Statistics;   // 미리 알려줌
+
+class BusTran;
+    Statistics stats;       // OK
+endclass
+
+class Statistics;
+endclass
+1️⃣SystemVerilog 특징1 - 'extern' + '::'
+
+SystemVerilog에서는 클래스 외부에 함수 정의가 가능하지만, 반드시 extern 선언 + ClassName::function 형식을 사용해야 한다.
+
+class BusTran;
+    bit [31:0] addr, crc, data[8];
+    extern function void display();
+endclass
+
+function void BusTran::display();
+    $display("@%0d: BusTran addr=%h, crc=%h", addr, crc);
+    $write("\tdata[0-7]=");
+    foreach (data[i]) $write(data[i]);
+    $display();
+endfunction
+2️⃣SystemVerilog 특징2 - 'this' handle
+
+클래스 맴버(위에서 정의한 string oname)과, function에서 정의한 argument의 이름이 충돌할 경우, 현재 겍체를 가리키는 this 핸들을 사용할 수 있다. 따라서 this는 함수가 호출되는 시점의 자기 자신의 객체를 가리키는 참조 변수에 해당한다.
+
+class Scoping;
+    string oname;
+
+    function new(string oname);
+        this.oname = oname;
+    endfunction
+endclass
+3️⃣SystemVerilog 특징3 - static
+
+static으로 데이터 타입을 설정한 경우, 해당 멤버는 객체마다 하나가 아니라 '클래스 전체에서 단 하나만 존재'한다.
+
+program test;
+
+class BusTran;
+    static int count = 0; // Number of objects created (클래스 변수)
+    int id;               // Unique instance ID (객체 변수)
+
+    function new;
+        id = count++;     // 현재 count를 id에 넣고, count 증가
+    endfunction
+endclass
+
+BusTran b1, b2;
+
+initial begin
+    b1 = new;  // First instance
+    b2 = new;  // Second instance
+    $display("Second id=%0d, count=%0d", b2.id, b2.count);
+end
+
+endprogram
+
+/*
+(1) 시작 시점
+BusTran.count = 0
+b1 = null
+b2 = null
+
+(2) b1 = new;
+count = 0
+id = 0
+count++ → count = 1
+따라서
+b1.id = 0
+BusTran.count = 1
+
+(3) b2 = new;
+count = 1
+id = 1
+count++ → count = 2
+따라서
+b2.id = 1
+BusTran.count = 2 -> b2.count = b1.count
+*/
+
+/*
+최종 정리
+BusTran class
+ └─ static count = 2   ← 모든 객체가 공유
+
+b1 ── id = 0
+b2 ── id = 1
+*/
+Connecting the Testbench and Design
+
+Testbench - DUT 연결을 안전하고, 재사용 가능하고, 타이밍 버그 없이 만들기 위해 단순 포트 연결이 아닌 추가 개념이 확장되었다. 두 가지 코드를 비교해보자.
+
+//-------------------------
+// (1) Testbench module
+//-------------------------
+module test (
+  input  logic [1:0] grant,
+  output logic [1:0] request,
+  input  logic       reset,
+  input  logic       clk
+);
+  initial begin
+    @(posedge clk);
+    request <= 2'b01;
+    $display("@%0d: Drove req=01", $time);
+    repeat (2) @(posedge clk);
+    if (grant != 2'b01)
+      $display("@%0d: a1: grant != 2'b01", $time);
+    ...
+    $finish;
+  end
+endmodule
+
+//-------------------------
+// (2) DUT module (ports)
+//-------------------------
+module arb_port (
+  output logic [1:0] grant,
+  input  logic [1:0] request,
+  input  logic       reset,
+  input  logic       clk
+);
+  ...
+  always @(posedge clk or posedge reset) begin
+    if (reset)
+      grant <= 2'b00;
+    else
+      ...
+  end
+endmodule
+
+//-------------------------
+// (3) Top module: wiring
+//-------------------------
+module top;
+  logic [1:0] grant, request;
+  logic       clk = 0, reset;
+  always #5 clk = ~clk;
+  arb_port a1 (grant, request, reset, clk);
+  test     t1 (grant, request, reset, clk);
+endmodule
+기존 코드
+
+포트 나열 순서가 맞아야 하며, 신호 수가 늘어수록 실수할 부분들이 급격하게 늘어난다.
+
+//-------------------------
+// (1) Interface definition
+//-------------------------
+interface arb_if (input bit clk);
+  logic [1:0] grant, request;
+  logic       reset;
+endinterface
+
+//-------------------------
+// (2) Testbench module
+//-------------------------
+module test (arb_if arbif);
+  ...
+  initial begin
+    // reset code left out
+    @(posedge arbif.clk);
+    arbif.request <= 2'b01;
+    $display("@%0d: Drove req=01", $time);
+    repeat (2) @(posedge arbif.clk);
+    if (arbif.grant != 2'b01)
+      $display("@%0d: a1: grant != 2'b01", $time);
+    $finish;
+  end
+endmodule : test
+
+//-------------------------
+// (3) DUT module (interface port)
+//-------------------------
+module arb (arb_if arbif);
+  ...
+  always @(posedge arbif.clk or posedge arbif.reset) begin
+    if (arbif.reset)
+      arbif.grant <= 2'b00;
+    else
+      arbif.grant <= next_grant;
+    ...
+  end
+endmodule
+
+//-------------------------
+// (4) Top module
+//-------------------------
+module top;
+  bit clk;
+  always #5 clk = ~clk;
+  arb_if arbif(clk);
+
+  arb  a1(arbif);
+  test t1(arbif);
+
+endmodule : top
+interface arb_if(input bit clk);를 통해 arb_if가 grant/request/reset/clk를 한 덩어리로 묶고, clk는 interface 포트로 들어가서, interface 내부에서 arbif.clk처럼 접근 가능해졌다. 만약 개별로 꺼내서 사용하고 싶다면, 다음과 같이 사용하면 된다.
+
+arb_port a1 (
+.grant (arbif.grant),
+.request (arbif.request),
+.reset (arbif.reset),
+.clk (arbif.clk)
+);
+❗ 문제 : interface 안에 있는 신호들은 기본적으로 양방향처럼 보임
+
+arbif.grant = ...;   // testbench도 가능
+arbif.grant = ...;   // DUT도 가능 → 위험!
+✅ 해결: modport : “누가 무엇을 읽고/쓰는지”를 명확히 규정
+
+modport TEST (output request, reset, input grant, clk);
+modport DUT  (input request, reset, clk, output grant);
+●Interface의 Trade-off
