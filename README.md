@@ -366,311 +366,268 @@ Formal Verification의 특징: 테스트벤치, 입력 벡터 없음, 결과는 
     //(i=0, j=0)→(i=0, j=1)→(i=0, j=2)→(i=1, j=0)→(i=1, j=1)→(i=1, j=2)
     
 4️⃣ Dynamic Arrays
+- 🔹 선언
 
-🔹 선언
+    int dyn[], d2[];
+    //크기 없음. 런타임에 결정된다.
+  
+- 🔹 할당 / 초기화
 
-int dyn[], d2[];
-//크기 없음. 런타임에 결정된다.
-🔹 할당 / 초기화
+    dyn = new[5];        // 5개 할당
+    foreach (dyn[j])
+      dyn[j] = j;
+  
+- 🔹 확장 + Copy
 
-dyn = new[5];        // 5개 할당
-foreach (dyn[j])
-  dyn[j] = j;
-🔹 확장 + Copy
+    //기존 dyn에 이어서
+    dyn = new[20](dyn);
+    //이는 기존 새 dyn[0..4]는 이전 값이 복사되며, dyn[5...19]는 기본값으로 초기화된다. (예:int면 0)
+  
+- 🔹 완전 재할당
 
-//기존 dyn에 이어서
-dyn = new[20](dyn);
-//이는 기존 새 dyn[0..4]는 이전 값이 복사되며, dyn[5...19]는 기본값으로 초기화된다. (예:int면 0)
-🔹 완전 재할당
+    dyn = new[100];  // 기존 데이터 전부 삭제됨
+  
+- 🔹 메모리 해제
 
-dyn = new[100];  // 기존 데이터 전부 삭제됨
-🔹 메모리 해제
-
-dyn.delete();
-//garbage collection(시뮬레이터가 메모리 회수)을 해주는 장치
-//다만, SystemVerilog는 시뮬레이션이 끝나면 어차피 정리되는데, delete를 왜 쓸까?
-//큰 dynamic array를 새로 계속 만들면 메모리가 커지기 때문에, new 이후 delete는 반드시 권장한다.
-●Queue 
-
-program test;
-  initial begin
-    int j = 11;
-    int q[$] = {10, 12, 15};  //q[$]로 선언 시, insert, pop 등의 여러 queue 함수 사용 가능
-
-    q.insert(1, j);   // {10, 11, 12, 15}
-    q.delete(2);      // {10, 11, 15}
-
-    foreach (q[i])
-      $display(q[i]);
-
-    q.push_front(16); // {16, 10, 11, 15}
-    j = q.pop_back;   // q = {16, 10, 11}, j = 15
-    q.push_back(17);  // {16, 10, 11, 17}
-    j = q.pop_front;  // q = {10, 11, 17}, j = 16
-
-    foreach (q[i])
-      $display(q[i]);
-  end
-endprogram
+        dyn.delete();
+        //garbage collection(시뮬레이터가 메모리 회수)을 해주는 장치
+        //다만, SystemVerilog는 시뮬레이션이 끝나면 어차피 정리되는데, delete를 왜 쓸까?
+        //큰 dynamic array를 새로 계속 만들면 메모리가 커지기 때문에, new 이후 delete는 반드시 권장한다.
+      
+    - Queue 
+    
+    program test;
+      initial begin
+        int j = 11;
+        int q[$] = {10, 12, 15};  //q[$]로 선언 시, insert, pop 등의 여러 queue 함수 사용 가능
+    
+        q.insert(1, j);   // {10, 11, 12, 15}
+        q.delete(2);      // {10, 11, 15}
+    
+        foreach (q[i])
+          $display(q[i]);
+    
+        q.push_front(16); // {16, 10, 11, 15}
+        j = q.pop_back;   // q = {16, 10, 11}, j = 15
+        q.push_back(17);  // {16, 10, 11, 17}
+        j = q.pop_front;  // q = {10, 11, 17}, j = 16
+    
+        foreach (q[i])
+          $display(q[i]);
+      end
+    endprogram
+  
 5️⃣ Associative Array
+- 기존 배열과 다르게, 인덱스가 0,1,2 같은 연속된 숫자일 필요가 없는 대신, key→value 형태로 저장하는 배열을 말한다. 따라서 인덱스 타입을 본인이 정해서 쓰는 배열이라고 생각할 수 있다. (대부분의 원소 값이 0인 Sparse Matrix에서 특히 유리한데, 0인 칸을 전부 메모리 먹는 기존 fixed array와 달리, associative는 값이 있는 칸만 키로 저장하기 때문이다.)
+- (단, 내부적으로 기존 fixed array보다 접근이 느릴 수 있다.)
 
-기존 배열과 다르게, 인덱스가 0,1,2 같은 연속된 숫자일 필요가 없는 대신, key→value 형태로 저장하는 배열을 말한다. 따라서 인덱스 타입을 본인이 정해서 쓰는 배열이라고 생각할 수 있다.
+    //Associative Array 선언 방법1
+    logic [63:0] assoc[*];
+    // [*]는 key 타입을 명시하지 않음(=도구가 알아서 처리)의 느낌으로 쓰는 형태로 선언할 수 있다.
+    
+    //Associative Array 선언 방법2
+    int switch[string];
+    // switch["min_addr"] = 10; 처럼 문자열이 배열 인덱스가 될 수 있다.
 
-(대부분의 원소 값이 0인 Sparse Matrix에서 특히 유리한데, 0인 칸을 전부 메모리 먹는 기존 fixed array와 달리, associative는 값이 있는 칸만 키로 저장하기 때문이다.)
-
-(단, 내부적으로 기존 fixed array보다 접근이 느릴 수 있다.)
-
-//Associative Array 선언 방법1
-logic [63:0] assoc[*];
-// [*]는 key 타입을 명시하지 않음(=도구가 알아서 처리)의 느낌으로 쓰는 형태로 선언할 수 있다.
-
-//Associative Array 선언 방법2
-int switch[string];
-// switch["min_addr"] = 10; 처럼 문자열이 배열 인덱스가 될 수 있다.
 EX)
 
-logic [63:0] assoc[*], idx = 1;
-repeat (64) begin
-  assoc[idx] = idx;
-  idx = idx << 1;   //idx 2배
-end
-foreach (assoc[i])
-  $display("assoc[%h] = %h", i, assoc[i]);
-●Associative Array + foreach 
+    logic [63:0] assoc[*], idx = 1;
+    repeat (64) begin
+      assoc[idx] = idx;
+      idx = idx << 1;   //idx 2배
+    end
+    foreach (assoc[i])
+      $display("assoc[%h] = %h", i, assoc[i]);
+      
+- Associative Array + foreach 
+  - Synopsys VCS에서만 Associaitive에 대한 foreach 구문을 지원하기 때문에 보다 이식성 좋은 순회법이 필요하다.
 
-Synopsys VCS에서만 Associaitive에 대한 foreach 구문을 지원하기 때문에 보다 이식성 좋은 순회법이 필요하다.
-
-if (assoc.first(idx)) begin
-  do
-    $display("assoc[%h]=%h", idx, assoc[idx]);
-  while (assoc.next(idx));
-end
-
-assoc.first(idx);
-assoc.delete(idx);
+    if (assoc.first(idx)) begin
+      do
+        $display("assoc[%h]=%h", idx, assoc[idx]);
+      while (assoc.next(idx));
+    end
+    
+    assoc.first(idx);
+    assoc.delete(idx);
+    
 EX)
 
-int switch[string], min_address, max_address;
-initial begin
-  int i, r, file;
-  string s;
-  file = $fopen("switch.txt","r"); //switch.txt를 read 모드로 읽어옴
+    int switch[string], min_address, max_address;
+    initial begin
+      int i, r, file;
+      string s;
+      file = $fopen("switch.txt","r"); //switch.txt를 read 모드로 읽어옴
+    
+    //파일 끝까지 반복해서 읽기
+      while (!$feof(file)) begin //파일을 모두 읽으면 $feof(file)=1
+        r = $fscanf(file, "%d %s", i, s); //$fscanf로 파일에서 문자열을 읽어 파싱 및 변수에 넣음
+                                          //%d : 정수 하나 읽어서 i에 저장
+                                          //%s : 공백 전까지 문자열 읽어서 s에 저장
+                                          //반환값 r은 "성공적으로 읽어 넣은 항목 개수"
+       //예컨대, 파일 한 줄이 12 min_address라고 해보자. i=12, s="min_address", r=2
+        switch[s] = i;
+      end
+      $fclose(file);
+    
+    //"min_address" 꺼내기
+      min_address = switch["min_address"];
+    
+    //"max_address"꺼내기
+      if (switch.exists("max_address"))
+        max_address = switch["max_address"];
+      else
+        max_address = 1000;
+        
+- Array Reduction 예시 - 배열에 대해 .sum, .product와 같은 리덕션(요약) 메소드 제공
+  - .sum, .product, .and, .or, .xor
 
-//파일 끝까지 반복해서 읽기
-  while (!$feof(file)) begin //파일을 모두 읽으면 $feof(file)=1
-    r = $fscanf(file, "%d %s", i, s); //$fscanf로 파일에서 문자열을 읽어 파싱 및 변수에 넣음
-                                      //%d : 정수 하나 읽어서 i에 저장
-                                      //%s : 공백 전까지 문자열 읽어서 s에 저장
-                                      //반환값 r은 "성공적으로 읽어 넣은 항목 개수"
-   //예컨대, 파일 한 줄이 12 min_address라고 해보자. i=12, s="min_address", r=2
-    switch[s] = i;
-  end
-  $fclose(file);
+    bit on[10];   // 1비트짜리 원소 10개짜리 배열
+    int summ;     // 32비트 signed 정수
+    
+    initial begin
+      foreach (on[i])
+        on[i] = i;         // on[i]는 0 or 1
+    // on = {0,1,0,1,0,1,0,1,0,1}
+    
+      $display("on.sum = %0d", on.sum);  // on.sum = 5
+    
+      summ = on.sum;
+      $display("summ = %0d", summ);      // summ = 5
+    
+      if (on.sum >= 32'd5)               // True
+        $display("sum has 5 or more 1's");
+    end
+    
+| i | 이진 | on[i]에 저장되는 값 (LSB) |
+| :--- | :--- | :--- |
+| **0** | **0000** | **0** |
+| **1** | **0001** | **1** |
+| **2** | **0010** | **0** |
+| **3** | **0011** | **1** |
+| **4** | **0100** | **0** |
+| **5** | **0101** | **1** |
+| **6** | **0110** | **0** |
+| **7** | **0111** | **1** |
+| **8** | **1000** | **0** |
+| **9** | **1001** | **1** |
 
-//"min_address" 꺼내기
-  min_address = switch["min_address"];
+- Array Locator 예시 - 배열에 대해 .min, .max와 같은 로케이터 메소드 제공
+  - .min, .max, .unique, sum with
 
-//"max_address"꺼내기
-  if (switch.exists("max_address"))
-    max_address = switch["max_address"];
-  else
-    max_address = 1000;
-●Array Reduction 예시 - 배열에 대해 .sum, .product와 같은 리덕션(요약) 메소드 제공
-
-.sum, .product, .and, .or, .xor
-
-bit on[10];   // 1비트짜리 원소 10개짜리 배열
-int summ;     // 32비트 signed 정수
-
-initial begin
-  foreach (on[i])
-    on[i] = i;         // on[i]는 0 or 1
-// on = {0,1,0,1,0,1,0,1,0,1}
-
-  $display("on.sum = %0d", on.sum);  // on.sum = 5
-
-  summ = on.sum;
-  $display("summ = %0d", summ);      // summ = 5
-
-  if (on.sum >= 32'd5)               // True
-    $display("sum has 5 or more 1's");
-end
-i
-
-이진
-
-on[i]에 저장되는 값 (LSB)
-
-0
-
-0000
-
-0
-
-1
-
-0001
-
-1
-
-2
-
-0010
-
-0
-
-3
-
-0011
-
-1
-
-4
-
-0100
-
-0
-
-5
-
-0101
-
-1
-
-6
-
-0110
-
-0
-
-7
-
-0111
-
-1
-
-8
-
-1000
-
-0
-
-9
-
-1001
-
-1
-
-●Array Locator 예시 - 배열에 대해 .min, .max와 같은 로케이터 메소드 제공
-
-.min, .max, .unique, sum with
-
-tq = q.min;      // 최소값
-tq = q.max;      // 최대값
-tq = f.unique;   // 중복 제거(유일한 값들)
-count = d.sum with (item > 7); //d 배열 원소를 돌면서, 조건을 만족하는 원소 대상으로 sum
+    tq = q.min;      // 최소값
+    tq = q.max;      // 최대값
+    tq = f.unique;   // 중복 제거(유일한 값들)
+    count = d.sum with (item > 7); //d 배열 원소를 돌면서, 조건을 만족하는 원소 대상으로 sum
+    
 EX) find 
 
-program test;
-  initial begin
-    int d[] = '{9, 1, 8, 3, 4, 4}, tq[$];
-    tq = d.find with (item >3); //{9,8,4,4}
-    foreach(tq[i])
-    $display(tq[i]);
-  end
-endprogram
-//find 계열 구문 추가 예시
-tq = d.find_index with (item > 3);  // {0,2,4}, 값 말고 인덱스를 찾는다.
-tq = d.find_first with (item > 99);   // {} 없음, 조건을 만족하는 첫 값 
-tq = d.find_first_index with (item==8); // {2}, 조건을 만족하는 첫 번째 인덱스
-tq = d.find_last with (item==4);        // {4}, 조건을 만족하는 마지막 값
-tq = d.find_last_index with (item==4);  // {5}, 조건을 만족하는 마지막 인덱스
-6️⃣ typedef, parameter
+    program test;
+      initial begin
+        int d[] = '{9, 1, 8, 3, 4, 4}, tq[$];
+        tq = d.find with (item >3); //{9,8,4,4}
+        foreach(tq[i])
+        $display(tq[i]);
+      end
+    endprogram
+    
+    //find 계열 구문 추가 예시
+    tq = d.find_index with (item > 3);  // {0,2,4}, 값 말고 인덱스를 찾는다.
+    tq = d.find_first with (item > 99);   // {} 없음, 조건을 만족하는 첫 값 
+    tq = d.find_first_index with (item==8); // {2}, 조건을 만족하는 첫 번째 인덱스
+    tq = d.find_last with (item==4);        // {4}, 조건을 만족하는 마지막 값
+    tq = d.find_last_index with (item==4);  // {5}, 조건을 만족하는 마지막 인덱스
 
+6️⃣ typedef, parameter
 typedef, parameter는 define과 다르게, 컴파일러가 의미를 이해하여 심볼 테이블에 등록하고, 중복이 발생 할 경우에는 에러를 띄움으로써 언어 차원에서 타입/상수로 관리한다.
 
-parameter OPSIZE = 8;
-typedef reg [OPSIZE-1:0] opreg_t;
+    parameter OPSIZE = 8;
+    typedef reg [OPSIZE-1:0] opreg_t;
+    
+    opreg_t op_a, op_b;
+    
+- 'define 매크로가 위험한 이유
 
-opreg_t op_a, op_b;
-*'define 매크로가 위험한 이유
+    `define x a+b
+    `define y c*x
+    //하지만 일반적인 컴파일러는 이를 문자열 치환으로 처리하므로
+    //y  →  c*a+b
+    //즉, 우리가 기대한 c*(a+b)가 아니다.
+    //따라서 'define 사용 시, 반드시 괄호를 사용하는 것이 관례이다.
+  
+7️⃣ sturct, packed struct, union
 
-`define x a+b
-`define y c*x
-//하지만 일반적인 컴파일러는 이를 문자열 치환으로 처리하므로
-//y  →  c*a+b
-//즉, 우리가 기대한 c*(a+b)가 아니다.
-//따라서 'define 사용 시, 반드시 괄호를 사용하는 것이 관례이다.
-7️⃣sturct, packed struct, union
-
-//1. struct : 각 필드는 독립된 메모리로서, C언어에서의 구조체와 거의 동일하다.
-typedef struct {
-  bit [7:0] r;
-  bit [7:0] g;
-  bit [7:0] b;
-} pixel_s;
-
-//2. struct packed //전체가 하나의 연속된 비트 벡터
-//아래의 예시는 총 24bit → [23:0] 레지스터 하나로 매핑가능하다.
-//특히, 하나의 레지스터에 비트를 묶음별로 다르게 사용하는 IP 관점에서 struct packed 타입이 유리하다.
-typedef struct packed {
-  bit [7:0] r;
-  bit [7:0] g;
-  bit [7:0] b;
-} pixel_p_s;
-
-//3. union //i, f는 표현만 다를 뿐, 같은 메모리를 공유한다.
-typedef union {
-  int  i;
-  real f;
-} num_u;
+    //1. struct : 각 필드는 독립된 메모리로서, C언어에서의 구조체와 거의 동일하다.
+    typedef struct {
+      bit [7:0] r;
+      bit [7:0] g;
+      bit [7:0] b;
+    } pixel_s;
+    
+    //2. struct packed //전체가 하나의 연속된 비트 벡터
+    //아래의 예시는 총 24bit → [23:0] 레지스터 하나로 매핑가능하다.
+    //특히, 하나의 레지스터에 비트를 묶음별로 다르게 사용하는 IP 관점에서 struct packed 타입이 유리하다.
+    typedef struct packed {
+      bit [7:0] r;
+      bit [7:0] g;
+      bit [7:0] b;
+    } pixel_p_s;
+    
+    //3. union //i, f는 표현만 다를 뿐, 같은 메모리를 공유한다.
+    typedef union {
+      int  i;
+      real f;
+    } num_u;
+    
 8️⃣Enumeration
 
-//1. 기본 enum
-enum {RED, BLUE, GREEN} color; //RED=0, BLUE=1, GREEN=2
-
-//잘못된 enum 설계
-typedef enum {FIRST=1, SECOND, THIRD} ordinal_e; //초기값은 0이므로 SECOND=1=FIRST와 충돌
-//해결책
-typedef enum {ERR_0=0, FIRST=1, SECOND, THIRD} ordinal_e;
+    //1. 기본 enum
+    enum {RED, BLUE, GREEN} color; //RED=0, BLUE=1, GREEN=2
+    
+    //잘못된 enum 설계
+    typedef enum {FIRST=1, SECOND, THIRD} ordinal_e; //초기값은 0이므로 SECOND=1=FIRST와 충돌
+    //해결책
+    typedef enum {ERR_0=0, FIRST=1, SECOND, THIRD} ordinal_e;
+    
 EX)
 
-program test;
-  initial begin
-    typedef enum {RED, BLUE, GREEN} COLOR_E;
-    COLOR_E color, c2;
-    integer c;
-    color = 0; //color 값 초기화
-    c = color;
+    program test;
+      initial begin
+        typedef enum {RED, BLUE, GREEN} COLOR_E;
+        COLOR_E color, c2;
+        integer c;
+        color = 0; //color 값 초기화
+        c = color;
+        
+        c2 = COLOR_E'(c); 
+        //type'(expression) 형태의 강제 캐스팅 -> 정수 c를 enum 타입 COLOR_E로 억지로 해석해라
+        $display("Color is %0d / %0s", c2, c2.name);
+        
+        c++;
+        if(!$cast(color,c)) $display("Cast failed for c=%0d",c);
+        //$cast(dest,src) : src를 dest 타입으로 변환해보고, 가능하면 dest에 넣고 1 반환하고,
+        //불가능하면 dest는 안 바꾸고 0 반환한다.
+        $display("Color is %0d / %0s", color, color.name);
+      end
+    endprogram
     
-    c2 = COLOR_E'(c); 
-    //type'(expression) 형태의 강제 캐스팅 -> 정수 c를 enum 타입 COLOR_E로 억지로 해석해라
-    $display("Color is %0d / %0s", c2, c2.name);
-    
-    c++;
-    if(!$cast(color,c)) $display("Cast failed for c=%0d",c);
-    //$cast(dest,src) : src를 dest 타입으로 변환해보고, 가능하면 dest에 넣고 1 반환하고,
-    //불가능하면 dest는 안 바꾸고 0 반환한다.
-    $display("Color is %0d / %0s", color, color.name);
-  end
-endprogram
 EX) String 예제
 
-program test;
-  initial begin
-    string s;
-    s = "SystemVerilog";
-    $display(s.getc(0));       // 83 ('S')
-    $display(s.toupper());     // SYSTEMVERILOG
-    s = {s, "3.1b"};           // concat -> "SystemVerilog3.1b"
-    s.putc(s.len()-1, "a");    // 마지막 문자 b -> a
-    $display(s.substr(2, 5));  // stem
-    my_log($psprintf("%s %5d", s, 42));
-  end
-
-  task my_log(string message);
-    $display("@%0d: %s", $time, message);
-  endtask
-endprogram
+    program test;
+      initial begin
+        string s;
+        s = "SystemVerilog";
+        $display(s.getc(0));       // 83 ('S')
+        $display(s.toupper());     // SYSTEMVERILOG
+        s = {s, "3.1b"};           // concat -> "SystemVerilog3.1b"
+        s.putc(s.len()-1, "a");    // 마지막 문자 b -> a
+        $display(s.substr(2, 5));  // stem
+        my_log($psprintf("%s %5d", s, 42));
+      end
+    
+      task my_log(string message);
+        $display("@%0d: %s", $time, message);
+      endtask
+    endprogram
 
 
