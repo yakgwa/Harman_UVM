@@ -663,14 +663,14 @@ SystemVerilog는 Verilog의 Procedural Statement(절차문)과 Task/Function을 
 
 - 📌C/C++ 스타일 루프 제어
 
-    while (...) begin
-        switch (...) begin
-            case ...
-                continue; //현재 반복만 스킵하고 loop의 다음 iteration으로 넘어간다.
-            case ...
-                break;   //loop 자체를 탈출한다. (switch - case 구문도 포함)
-        endcase
-    end
+      while (...) begin
+          switch (...) begin
+              case ...
+                  continue; //현재 반복만 스킵하고 loop의 다음 iteration으로 넘어간다.
+              case ...
+                  break;   //loop 자체를 탈출한다. (switch - case 구문도 포함)
+          endcase
+      end
 
 - 📌SystemVerilog 스타일 루프 제어
     - Verilog/SystemVerilog는 C/C++과 달리, case 구문으로 들어가면 해당 변수에 대해 만족하는 특정 구문만 실행된다. 따라서 Verilog/SystemVerilog에서는 while begin - case - end 구문이 있을 때, 특정 case에서 break 구문을 만나게 되면, while문 전체를 빠져나오게 된다는 차이점이 있다.
@@ -684,32 +684,31 @@ SystemVerilog는 Verilog의 Procedural Statement(절차문)과 Task/Function을 
 | **blocking operation 가능** | **✅ 반드시 값 반환 (Verilog 기준)** | 
 
 🚀 SystemVerilog 개선점
+- ✅ void function 지원
+  - 이를 통해, 반환 값 없이도 함수 사용이 가능하며, task처럼 쓰되, 시간은 소비하지 않는 '순수 계산/출력용 함수' 개념이 명확해졌다.
 
-✅ void function 지원
+      function void print_state();
+          $display(...);
+      endfunction
 
-이를 통해, 반환 값 없이도 함수 사용이 가능하며, task처럼 쓰되, 시간은 소비하지 않는 '순수 계산/출력용 함수' 개념이 명확해졌다.
+- ✅task/function 내부 begin...end 생략 가능
 
-function void print_state();
-    $display(...);
-endfunction
-✅task/function 내부 begin...end 생략 가능
+    task multiple_lines;
+        $display("First line");
+        $display("Second line");
+    endtask
 
-task multiple_lines;
-    $display("First line");
-    $display("Second line");
-endtask
-✅task 구문에서 return
+- ✅task 구문에서 return
 
-task load_array(int len, ref int array[]);
-    if (len <= 0) begin
-        $display("Bad len");
-        return;
-    end
-    ...
-endtask
+    task load_array(int len, ref int array[]);
+        if (len <= 0) begin
+            $display("Bad len");
+            return;
+        end
+        ...
+    endtask
+
 task가 하나의 절차적 함수로 취급됨에 따라 return;시, 즉시 task 구문이 종료된다.
-
-​
 
 👉 timescale의 구조적 문제 해결
 
