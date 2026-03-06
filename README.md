@@ -758,46 +758,46 @@ task가 하나의 절차적 함수로 취급됨에 따라 return;시, 즉시 tas
           BusTran a;
           a = new();
       
-4️⃣ Property : 클래스 안에 있는 데이터(변수)
+  - 4️⃣ Property : 클래스 안에 있는 데이터(변수)
 
-class BusTran;
-  int addr;
-  logic [31:0] data;
-endclass
-5️⃣ Method : 객체의 동작을 정의하는 코드
+        class BusTran;
+          int addr;
+          logic [31:0] data;
+        endclass
+    
+  - 5️⃣ Method : 객체의 동작을 정의하는 코드
 
-function void display();
-  $display("%0d", addr);
-endfunction
-6️⃣ Prototype : task/function의 선언부
+        function void display();
+          $display("%0d", addr);
+        endfunction
+    
+  - 6️⃣ Prototype : task/function의 선언부
 
-function void display();
+        function void display();
+    
 👉 SystemVerilog Class
 
-class BusTran;
-    logic [31:0] addr, crc, data[8];
-    function new;
-        addr = 3;
-        foreach (data[i])
-            data[i] = 5;
-    endfunction
-endclass
+    class BusTran;
+        logic [31:0] addr, crc, data[8];
+        function new;
+            addr = 3;
+            foreach (data[i])
+                data[i] = 5;
+        endfunction
+    endclass
+    
+    BusTran b;
+    
+- b는 BusTran 타입의 핸들(handle)
+- 아직 어떤 객체도 가리키지 않음
+- 내부 상태: null (즉, b==null → b.display()하면 런타임 에러)
 
-BusTran b;
-b는 BusTran 타입의 핸들(handle)
+      b = new;  //c++ 대응 개념 : BusTran* b = new BusTran();
 
-아직 어떤 객체도 가리키지 않음
-
-내부 상태: null (즉, b==null → b.display()하면 런타임 에러)
-
-b = new;  //c++ 대응 개념 : BusTran* b = new BusTran();
-new가 하는 일
-
-힙(heap)에 BusTran 객체 생성
-
-생성자(constructor) new() 실행
-
-그 객체의 주소를 핸들 b에 저장
+👉 new가 하는 일
+- 힙(heap)에 BusTran 객체 생성
+- 생성자(constructor) new() 실행
+- 그 객체의 주소를 핸들 b에 저장
 
 ​
 
