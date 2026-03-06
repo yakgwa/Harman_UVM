@@ -799,80 +799,81 @@ task가 하나의 절차적 함수로 취급됨에 따라 return;시, 즉시 tas
 - 생성자(constructor) new() 실행
 - 그 객체의 주소를 핸들 b에 저장
 
-​
-
 이제서야 비로소 Instantiation이 일어나면서, 하나의 Object가 생성된다. Object가 생성되면서, 위에서 정의한 function new; 가 자동 호출되면서 객체의 초기 상태를 정의하게 된다.
 
-​
+### 개념 차이 : new() vs new[]
 
-● 개념 차이 : new() vs new[]
+- ✅ new() : Class Object Instantiation
 
-✅ new() : Class Object Instantiation
+      BusTran b;
+      b = new;
+      b = new(10);   // 생성자 인자
 
-BusTran b;
-b = new;
-b = new(10);   // 생성자 인자
-✅ new[] : 동적 배열(dynamic array) 생성
+- ✅ new[] : 동적 배열(dynamic array) 생성
 
-int dyn[];
-dyn = new[5];
-🔥 핵심 오해 포인트 정리1  -  new()와 new[]의 차이를 명확히 보여주는 예제
+      int dyn[];
+      dyn = new[5];
+  
+🔥 핵심 오해 포인트 정리1 - new()와 new[]의 차이를 명확히 보여주는 예제
 
-BusTran arr[];     // ❗ 클래스 핸들 배열
-arr = new[4];      // 핸들 4개 생성
-
-/*
-이 상태에서:
-arr[0] == null
-arr[1] == null
-…
-❗ 객체는 하나도 없음
-*/
-
-foreach (arr[i])
-    arr[i] = new;  // ← 여기서 진짜 객체 생성
+    BusTran arr[];     // ❗ 클래스 핸들 배열
+    arr = new[4];      // 핸들 4개 생성
+    
+    /*
+    이 상태에서:
+    arr[0] == null
+    arr[1] == null
+    …
+    ❗ 객체는 하나도 없음
+    */
+    
+    foreach (arr[i])
+        arr[i] = new;  // ← 여기서 진짜 객체 생성
+        
 🔥 핵심 오해 포인트 정리2 - 객체 생성 과정에서 주의점
 
-BusTran b1, b2;   // handle 두 개 선언
-b1 = new;         // 첫 번째 객체 생성
-b2 = b1;          // 같은 객체를 가리킴
-/*
-b1 ─┐
-    ├──> object #1
-b2 ─┘
-*/
-
-b1 = new;         // 두 번째 객체 생성
-/*
-b1 ───> object #2
-b2 ───> object #1
-*/
+    BusTran b1, b2;   // handle 두 개 선언
+    b1 = new;         // 첫 번째 객체 생성
+    b2 = b1;          // 같은 객체를 가리킴
+    /*
+    b1 ─┐
+        ├──> object #1
+    b2 ─┘
+    */
+    
+    b1 = new;         // 두 번째 객체 생성
+    /*
+    b1 ───> object #2
+    b2 ───> object #1
+    */
+    
 🔥 핵심 오해 포인트 정리2 - Garbage Collection의 정확한 의미(Deallocation)
 
-BusTran b;
-b = new;     // 첫 번째 객체
-//object #1 생성
-//참조 핸들 수 = 1
-
-b = new;     // 두 번째 객체 (첫 번째는?)
-//object #2 생성
-//b가 object #1을 더 이상 가리키지 않음
-//따라서 object #1에 대해서는 참조 핸들 수가 없으므로 garbage collection 대상에 포함된다.
-
-b = null;    // 두 번째 객체는?
-//만약 b=null 해버리면 b는 아무런 object도 가리키지 않게되면서 objct #2 역시 참조 핸들 수가 사라진다.
+    BusTran b;
+    b = new;     // 첫 번째 객체
+    //object #1 생성
+    //참조 핸들 수 = 1
+    
+    b = new;     // 두 번째 객체 (첫 번째는?)
+    //object #2 생성
+    //b가 object #1을 더 이상 가리키지 않음
+    //따라서 object #1에 대해서는 참조 핸들 수가 없으므로 garbage collection 대상에 포함된다.
+    
+    b = null;    // 두 번째 객체는?
+    //만약 b=null 해버리면 b는 아무런 object도 가리키지 않게되면서 objct #2 역시 참조 핸들 수가 사라진다.
+    
 🔥 핵심 오해 포인트 정리3 - Compilation Order (아직 정의되지 않은 클래스를 쓰고 싶을 때)
-
 (단, 컴파일러에 따라 typedef 선언 없이도 되는 경우가 있지만, 표준적으로는 unsafe하므로, 이식성을 위해 항상 쓰는 것이 정석이다.)
 
-typedef class Statistics;   // 미리 알려줌
-
-class BusTran;
-    Statistics stats;       // OK
-endclass
-
-class Statistics;
-endclass
+    typedef class Statistics;   // 미리 알려줌
+    
+    class BusTran;
+        Statistics stats;       // OK
+    endclass
+    
+    class Statistics;
+    endclass
+    
 1️⃣SystemVerilog 특징1 - 'extern' + '::'
 
 SystemVerilog에서는 클래스 외부에 함수 정의가 가능하지만, 반드시 extern 선언 + ClassName::function 형식을 사용해야 한다.
