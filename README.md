@@ -1012,65 +1012,67 @@ Testbench - DUT 연결을 안전하고, 재사용 가능하고, 타이밍 버그
 
 - 기존 코드 : 포트 나열 순서가 맞아야 하며, 신호 수가 늘어수록 실수할 부분들이 급격하게 늘어난다.
 
-    //-------------------------
-    // (1) Interface definition
-    //-------------------------
-    interface arb_if (input bit clk);
-      logic [1:0] grant, request;
-      logic       reset;
-    endinterface
-    
-    //-------------------------
-    // (2) Testbench module
-    //-------------------------
-    module test (arb_if arbif);
-      ...
-      initial begin
-        // reset code left out
-        @(posedge arbif.clk);
-        arbif.request <= 2'b01;
-        $display("@%0d: Drove req=01", $time);
-        repeat (2) @(posedge arbif.clk);
-        if (arbif.grant != 2'b01)
-          $display("@%0d: a1: grant != 2'b01", $time);
-        $finish;
-      end
-    endmodule : test
-    
-    //-------------------------
-    // (3) DUT module (interface port)
-    //-------------------------
-    module arb (arb_if arbif);
-      ...
-      always @(posedge arbif.clk or posedge arbif.reset) begin
-        if (arbif.reset)
-          arbif.grant <= 2'b00;
-        else
-          arbif.grant <= next_grant;
+      //-------------------------
+      // (1) Interface definition
+      //-------------------------
+      interface arb_if (input bit clk);
+        logic [1:0] grant, request;
+        logic       reset;
+      endinterface
+      
+      //-------------------------
+      // (2) Testbench module
+      //-------------------------
+      module test (arb_if arbif);
         ...
-      end
-    endmodule
-    
-    //-------------------------
-    // (4) Top module
-    //-------------------------
-    module top;
-      bit clk;
-      always #5 clk = ~clk;
-      arb_if arbif(clk);
-    
-      arb  a1(arbif);
-      test t1(arbif);
-    
-    endmodule : top
-interface arb_if(input bit clk);를 통해 arb_if가 grant/request/reset/clk를 한 덩어리로 묶고, clk는 interface 포트로 들어가서, interface 내부에서 arbif.clk처럼 접근 가능해졌다. 만약 개별로 꺼내서 사용하고 싶다면, 다음과 같이 사용하면 된다.
+        initial begin
+          // reset code left out
+          @(posedge arbif.clk);
+          arbif.request <= 2'b01;
+          $display("@%0d: Drove req=01", $time);
+          repeat (2) @(posedge arbif.clk);
+          if (arbif.grant != 2'b01)
+            $display("@%0d: a1: grant != 2'b01", $time);
+          $finish;
+        end
+      endmodule : test
+      
+      //-------------------------
+      // (3) DUT module (interface port)
+      //-------------------------
+      module arb (arb_if arbif);
+        ...
+        always @(posedge arbif.clk or posedge arbif.reset) begin
+          if (arbif.reset)
+            arbif.grant <= 2'b00;
+          else
+            arbif.grant <= next_grant;
+          ...
+        end
+      endmodule
+      
+      //-------------------------
+      // (4) Top module
+      //-------------------------
+      module top;
+        bit clk;
+        always #5 clk = ~clk;
+        arb_if arbif(clk);
+      
+        arb  a1(arbif);
+        test t1(arbif);
+      
+      endmodule : top
+  
+    - interface arb_if(input bit clk);를 통해 arb_if가 grant/request/reset/clk를 한 덩어리로 묶고, clk는 interface 포트로 들어가서, interface 내부에서 arbif.clk처럼 접근 가능해졌다. 만약 개별로 꺼내서 사용하고 싶다면, 다음과 같이 사용하면 된다.
 
-arb_port a1 (
-.grant (arbif.grant),
-.request (arbif.request),
-.reset (arbif.reset),
-.clk (arbif.clk)
-);
+        arb_port a1 (
+        .grant (arbif.grant),
+        .request (arbif.request),
+        .reset (arbif.reset),
+        .clk (arbif.clk)
+        );
+      
 ❗ 문제 : interface 안에 있는 신호들은 기본적으로 양방향처럼 보임
 
 arbif.grant = ...;   // testbench도 가능
