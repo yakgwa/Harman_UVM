@@ -425,13 +425,13 @@ Formal Verification의 특징: 테스트벤치, 입력 벡터 없음, 결과는 
 - 기존 배열과 다르게, 인덱스가 0,1,2 같은 연속된 숫자일 필요가 없는 대신, key→value 형태로 저장하는 배열을 말한다. 따라서 인덱스 타입을 본인이 정해서 쓰는 배열이라고 생각할 수 있다. (대부분의 원소 값이 0인 Sparse Matrix에서 특히 유리한데, 0인 칸을 전부 메모리 먹는 기존 fixed array와 달리, associative는 값이 있는 칸만 키로 저장하기 때문이다.)
 - (단, 내부적으로 기존 fixed array보다 접근이 느릴 수 있다.)
 
-    //Associative Array 선언 방법1
-    logic [63:0] assoc[*];
-    // [*]는 key 타입을 명시하지 않음(=도구가 알아서 처리)의 느낌으로 쓰는 형태로 선언할 수 있다.
-    
-    //Associative Array 선언 방법2
-    int switch[string];
-    // switch["min_addr"] = 10; 처럼 문자열이 배열 인덱스가 될 수 있다.
+      //Associative Array 선언 방법1
+      logic [63:0] assoc[*];
+      // [*]는 key 타입을 명시하지 않음(=도구가 알아서 처리)의 느낌으로 쓰는 형태로 선언할 수 있다.
+      
+      //Associative Array 선언 방법2
+      int switch[string];
+      // switch["min_addr"] = 10; 처럼 문자열이 배열 인덱스가 될 수 있다.
 
 EX)
 
