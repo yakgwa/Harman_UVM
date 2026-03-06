@@ -644,20 +644,20 @@ SystemVerilog는 Verilog의 Procedural Statement(절차문)과 Task/Function을 
 👉 “Verilog vs SystemVerilog 문법 차이”
 - ✅ for문에서 변수 선언 가능
 
-    for (int i = 0; i < 10; ++i)
-        array[i] = i;
+      for (int i = 0; i < 10; ++i)
+          array[i] = i;
     
 - ✅ do…while 문 지원
 
-    do
-        sum += array[j];
-    while (j--);
+      do
+          sum += array[j];
+      while (j--);
 
 - ✅ begin : label / end : label (최신 verilog는 모두 지원한다고 알고 있)
 
-    begin : example
-       ...
-    end : example
+      begin : example
+         ...
+      end : example
   
 👉 “C/C++ vs SystemVerilog 루프 제어 스타일 차이”
 
