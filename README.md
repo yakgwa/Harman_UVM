@@ -50,50 +50,29 @@
     - 👉 “정답지와 비교하는 방식”
 
   - 2️⃣ Assertion 
-  - 시뮬레이션 중 조건이 깨지는 순간을 즉시 탐지
-  - 상태 변화, 프로토콜 위반 감지에 강력(단, 기존 Verilog 문법과 성격이 너무 달라서 추가 학습이 필요)
+    - 시뮬레이션 중 조건이 깨지는 순간을 즉시 탐지
+    - 상태 변화, 프로토콜 위반 감지에 강력(단, 기존 Verilog 문법과 성격이 너무 달라서 추가 학습이 필요)
 
-​
+  - 3️⃣ Coverage-driven Verification (CDV)
+    - “테스트 많이 돌렸다” ❌
+    - “우리가 검증 밀도를 높여, 검증해야 할 모든 경우를 실제로 다 돌렸는가?” ⭕
+    - Coverage = 검증 진행률 + 완성도 지표 → 검증에 대한 정량적 지표 제공
+    - 즉, Coverage를 기준으로 테스트를 생성·조정·종료하는 검증 방법론으로, 검증 진행 상황을 정량화하고 sign-off 기준을 제공
+      ​
+4️⃣ Verification Goals
+- Functionality (SystemVerilog 존재 이유), Timing, Performance, Power, Physical effects(IR drop, crosstalk, 공정 변동성 등)
+- SystemVerilog는 그 중에서도 기능 검증에 최적화된 언어라고 볼 수 있다.
 
-③ Coverage-driven Verification (CDV)
+5️⃣ Directed Test vs Constrained Random Test
+- Directed Verification (전통적 방식)
+  - 스펙 기반으로 테스트 케이스 직접 작성
+  - 문제점: 설계 변경 시 테스트 전면 수정, “내가 준비한 경우만 잡힌다”
+- Constrained Random Verification
+  - 목표 영역만 정의
+  - 나머지는 랜덤 + 자동 생성
+  - Coverage로 검증 진행 상황 추적
 
-“테스트 많이 돌렸다” ❌
-
-“우리가 검증 밀도를 높여, 검증해야 할 모든 경우를 실제로 다 돌렸는가?” ⭕
-
-Coverage = 검증 진행률 + 완성도 지표 → 검증에 대한 정량적 지표 제공
-
-즉, Coverage를 기준으로 테스트를 생성·조정·종료하는 검증 방법론으로, 검증 진행 상황을 정량화하고 sign-off 기준을 제공
-
-​
-
-4. Verification Goals
-
-Functionality (SystemVerilog 존재 이유), Timing, Performance, Power, Physical effects(IR drop, crosstalk, 공정 변동성 등)
-
-SystemVerilog는 그 중에서도 기능 검증에 최적화된 언어라고 볼 수 있다.
-
-​
-
-5. Directed Test vs Constrained Random Test
-
-Directed Verification (전통적 방식)
-
-스펙 기반으로 테스트 케이스 직접 작성
-
-문제점: 설계 변경 시 테스트 전면 수정, “내가 준비한 경우만 잡힌다”
-
-Constrained Random Verification
-
-목표 영역만 정의
-
-나머지는 랜덤 + 자동 생성
-
-Coverage로 검증 진행 상황 추적
-
-​
-
-6. Verification ≠ Simulation ≠ Testing
+6️⃣ Verification ≠ Simulation ≠ Testing
 
 구분
 
