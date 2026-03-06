@@ -446,14 +446,14 @@ EX)
 - Associative Array + foreach 
   - Synopsys VCS에서만 Associaitive에 대한 foreach 구문을 지원하기 때문에 보다 이식성 좋은 순회법이 필요하다.
 
-      if (assoc.first(idx)) begin
-        do
-          $display("assoc[%h]=%h", idx, assoc[idx]);
-        while (assoc.next(idx));
-      end
-      
-      assoc.first(idx);
-      assoc.delete(idx);
+        if (assoc.first(idx)) begin
+          do
+            $display("assoc[%h]=%h", idx, assoc[idx]);
+          while (assoc.next(idx));
+        end
+        
+        assoc.first(idx);
+        assoc.delete(idx);
     
 EX)
 
@@ -486,22 +486,22 @@ EX)
 - Array Reduction 예시 - 배열에 대해 .sum, .product와 같은 리덕션(요약) 메소드 제공
   - .sum, .product, .and, .or, .xor
 
-      bit on[10];   // 1비트짜리 원소 10개짜리 배열
-      int summ;     // 32비트 signed 정수
-      
-      initial begin
-        foreach (on[i])
-          on[i] = i;         // on[i]는 0 or 1
-      // on = {0,1,0,1,0,1,0,1,0,1}
-      
-        $display("on.sum = %0d", on.sum);  // on.sum = 5
-      
-        summ = on.sum;
-        $display("summ = %0d", summ);      // summ = 5
-      
-        if (on.sum >= 32'd5)               // True
-          $display("sum has 5 or more 1's");
-      end
+        bit on[10];   // 1비트짜리 원소 10개짜리 배열
+        int summ;     // 32비트 signed 정수
+        
+        initial begin
+          foreach (on[i])
+            on[i] = i;         // on[i]는 0 or 1
+        // on = {0,1,0,1,0,1,0,1,0,1}
+        
+          $display("on.sum = %0d", on.sum);  // on.sum = 5
+        
+          summ = on.sum;
+          $display("summ = %0d", summ);      // summ = 5
+        
+          if (on.sum >= 32'd5)               // True
+            $display("sum has 5 or more 1's");
+        end
     
 | i | 이진 | on[i]에 저장되는 값 (LSB) |
 | :--- | :--- | :--- |
