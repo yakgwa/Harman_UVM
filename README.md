@@ -346,24 +346,24 @@ Formal Verification의 특징: 테스트벤치, 입력 벡터 없음, 결과는 
 
   - Array Initialization 방법
 
-    //전체 초기화
-    integer descend = '{4,3,2,1,0};
-    //부분 초기화
-    integer descend[0:2] = '{5,6,7};
-    //반복 값 초기화
-    integer samearr = '{4{8}}; //{8,8,8,8}
-    
-  - Itertation에서 배열 활용 : for vs foreach
-
-    //for : 인덱스를 직접 관리
-    for (int i=0; i<$size(src); i++) 
-      src[i] = i;
-    
-    //foreach : SystemVerilog 핵심. 배열 구조 기반 자동 반복
-    integer md[2][3] = '{'{0,1,2}, '{3,4,5}};
-    foreach (md[i,j])
-      $display("md[%0d][%0d]=%0d", i, j, md[i][j]);
-    //(i=0, j=0)→(i=0, j=1)→(i=0, j=2)→(i=1, j=0)→(i=1, j=1)→(i=1, j=2)
+      //전체 초기화
+      integer descend = '{4,3,2,1,0};
+      //부분 초기화
+      integer descend[0:2] = '{5,6,7};
+      //반복 값 초기화
+      integer samearr = '{4{8}}; //{8,8,8,8}
+      
+    - Itertation에서 배열 활용 : for vs foreach
+  
+      //for : 인덱스를 직접 관리
+      for (int i=0; i<$size(src); i++) 
+        src[i] = i;
+      
+      //foreach : SystemVerilog 핵심. 배열 구조 기반 자동 반복
+      integer md[2][3] = '{'{0,1,2}, '{3,4,5}};
+      foreach (md[i,j])
+        $display("md[%0d][%0d]=%0d", i, j, md[i][j]);
+      //(i=0, j=0)→(i=0, j=1)→(i=0, j=2)→(i=1, j=0)→(i=1, j=1)→(i=1, j=2)
     
 4️⃣ Dynamic Arrays
 - 🔹 선언
