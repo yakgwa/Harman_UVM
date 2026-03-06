@@ -42,7 +42,7 @@
 - 즉, CRV는 Verification Engineer가 의미 있는 제약을 정의하고, 그 안에서 stimulus를 랜덤으로 생성해 설계를 검증하는 방법이다.
 - 의미 있는 제약이란? 이 DUT가 가질 수 있는 의미 있는 상태 공간으로, Spec Behavior(기능, 정상 동작 시나리오), Corner Cases(경곗값, 불연속, 에러조건) 등을 기준으로 정의되는 제약이다.
 
-<div align="center"><img src="https://github.com/yakgwa/Harman_UVM/blob/main/Picture/image_1.png" width="400"/>
+<div align="center"><img src="https://github.com/yakgwa/Harman_UVM/blob/main/picture/image_1.png" width="400"/>
 
 <div align="left">
 
