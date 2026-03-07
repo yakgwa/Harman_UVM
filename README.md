@@ -1089,3 +1089,926 @@ Testbench - DUT 연결을 안전하고, 재사용 가능하고, 타이밍 버그
 | :---: | :---: |
 | **AMBA, arbiter 같은 반복 사용 프로토콜** | **단 1번 쓰는, 아주 단순한 point-to-point 연결** |
 | **신호 수 많고 규칙이 있는 경우** | **재사용 계획 없는 실험용 RTL** |
+
+## 📝 About Verification : Randomization & Threads and Interprocess Communication & Functional Coverage
+
+### Randomization
+사람이 직접 테스트 벡터를 쓰지 않고도, 의미 있는 입력을 자동으로 생성하여 설계를 검증하기 위해 randomization에 관한 것들을 살펴봐야 한다.
+
+❌ “이 입력도 해보고, 저 입력도 해보고…”
+⭕ “이런 조건을 만족하는 입력을 무작위로 많이 만들어라”
+
+​👉 Randomization 핵심 문법 정리1
+-🔹 rand vs randc
+| 구분 | 의미 |
+| :---: | :---: |
+| **rand** | **일반 랜덤 (중복 허용)** |
+| **randc** | **모든 값이 한 번씩 나온 후 다시 섞음 (중복 ❌)** |
+
+  - 예 : randc bit[1:0] kind → 0,1,2,3을 한 번씩 다 뽑고 나서 다시 랜덤 시작
+
+​
+
+🔹 constraint
+
+랜덤 값에 제약 조건을 걸어줌
+
+꼭 있어야 하는 건 ❌ → “의미 있는 테스트”를 만들고 싶을 때 사용
+
+​
+
+🔹assert(randomize())
+
+assert(p.randomize());
+랜덤화 성공 → pass
+
+constraint가 충돌하면 → assert fail
+
+즉, assert는 제약 조건이 만족되었는지를 체크하는 안전장치이다.
+
+​
+
+🔹 inside
+
+c inside {[lo:hi]}; //lo <= c <= hi
+!(c inside {[lo:hi]}); //c < lo  OR  c > hi
+c inside {0,1,1,1,1,1}; //inside는 중복 허용(중복 개수 = 뽑힐 확률(weight))
+                        //0 : 1회, 1 : 5회 → 1이 5배 더 잘 뽑힘
+EX) 기본 예제
+
+program test;
+
+  class Packet;
+    // Random variables
+    rand  bit [31:0] src;
+    rand  bit [31:0] dst;
+    rand  bit [31:0] data[8];
+    randc bit [1:0]  kind;
+
+    // Constraint: limit src range
+    constraint c {
+      src > 10;
+      src < 15;
+    }
+
+    function void display();
+      $display("Src: %0d, Dst: %0d, Kind: %0d", src, dst, kind);
+    endfunction
+  endclass
+
+  Packet p;
+
+  initial begin
+    p = new;
+
+    for (int i = 0; i < 10; i++) begin
+      assert(p.randomize());
+      p.display();
+    end
+  end
+
+endprogram
+EX) Choosing from an Array (inside + dynamic array)
+
+미리 만들어 둔 값 집합 중에서만 랜덤으로 고른다
+
+class Days;
+  typedef enum {SUN, MON, TUE, WED, THU, FRI, SAT} DAYS_E;
+
+  DAYS_E choices[$];
+  rand  DAYS_E choice;
+
+  constraint cday { choice inside {choices}; }
+endclass
+
+Days days;
+
+initial begin
+  days = new;
+
+  days.choices = '{Days::SUN, Days::SAT};
+  assert(days.randomize());
+  $display("Random weekend day %s\n", days.choice.name);
+
+  days.choices = '{Days::MON, Days::TUE, Days::WED, Days::THU, Days::FRI};
+  assert(days.randomize());
+  $display("Random week day %s", days.choice.name);
+end
+EX) Permutation (randc index로 순열처럼 뽑기)
+
+program test;
+  class RandcInside;
+    int array[];              // Values to choose
+    randc bit [15:0] index;   // Index into array
+
+    function new(input int a[]); // Construct & initialize
+      array = a;
+    endfunction
+
+    function int pick;        // Return most recent pick
+      return array[index];
+    endfunction
+
+    constraint c_size { index < array.size; }
+  endclass
+
+  initial begin
+    RandcInside ri;
+
+    ri = new('{1, 3, 5, 7, 9, 11, 13});
+
+    repeat (ri.array.size) begin
+      assert(ri.randomize());
+      $display("Picked %2d [%0d]", ri.pick(), ri.index);
+    end
+  end
+
+endprogram
+​
+
+🔥 핵심 오해 포인트 정리1 - Multiple Expressions
+
+SystemVerilog constraint는 수학식처럼 연속 비교를 지원하지 않고, 분리해서 사용해야 한다.
+
+constraint good {
+  0 < a;
+  a < b;
+  b < c;
+}
+
+constraint bad {
+  0 < a < b < c; // ❌ 동작 안 함
+}
+👉 Randomization 문법 정리2 (+Constraint)
+
+🔹 Distribution (dist)
+
+src dist {0:=40, [1:3]:=60};
+dst dist {0:/40, [1:3]:/60};
+문법
+
+의미
+
+:=
+
+값 하나당 weight
+
+:/
+
+구간 전체에 weight를 나눔
+
+src
+
+확률
+
+dst
+
+확률
+
+0
+
+40 / 220
+
+0
+
+40 / 100
+
+1
+
+60 / 220
+
+1
+
+20 / 100
+
+2
+
+60 / 220
+
+2
+
+20 / 100
+
+3
+
+60 / 220
+
+3
+
+20 / 100
+
+●Dynamically Changing Distribution
+
+bit [31:0] w_byte=1, w_word=3, w_lwrd=5;
+
+len dist {
+  BYTE := w_byte,
+  WORD := w_word,
+  LWRD := w_lwrd;
+}
+🔹 Distribution Function
+
+앞서 살펴본 dist{}는 정적인 확률 비율이라면 Distribution function은 모양을 가진 확률 분포함수에 해당한다. 대표적인 함수를 정리하면 다음과 같다.
+
+함수
+
+분포 의미
+
+언제 쓰나
+
+$dist_uniform
+
+완전 균등
+
+baseline 랜덤
+
+$dist_normal
+
+정규분포 (종 모양)
+
+평균 근처가 자주
+
+$dist_poisson
+
+포아송 분포
+
+이벤트 발생 횟수
+
+$dist_exponential
+
+지수 감소
+
+timeout, retry
+
+$random
+
+signed 32-bit
+
+단순 난수
+
+$urandom
+
+unsigned 32-bit
+
+주소, 길이
+
+$urandom_range(a,b)
+
+[a,b] 균등
+
+가장 많이 씀
+
+x = $urandom_range(0, 15);
+🔹 Conditional Constraints1 : implication (->)
+
+class BusOp;
+    ...
+    constraint c_io {
+        (io_space_mode) -> addr[31] == 1'b1;
+    }
+//io_space_mode가 참이면, addr[31]은 반드시 1
+//거짓이면? → 아무 제약 없음
+🔹 Conditional Constraints2 : if - else 형
+
+class BusOp;
+    ...
+    constraint c_len_rw {
+        if (op == READ)
+            len inside {[BYTE:LWRD]};
+        else
+            len == LWRD;
+    }
+🔥 핵심 오해 포인트 정리1 - Implication(->)의 부작용
+
+class impl;
+    rand bit x;
+    rand biti [1:0] y;
+    contraint c_xy {
+         (x==0) -> y==0;
+    }
+endclass
+Case
+
+x
+
+y
+
+확률
+
+A
+
+0
+
+0
+
+1/2
+
+E
+
+1
+
+0
+
+1/8
+
+F
+
+1
+
+1
+
+1/8
+
+G
+
+1
+
+2
+
+1/8
+
+H
+
+1
+
+3
+
+1/8
+
+확률분포가 균등하지 못하여 특정 케이스만 반복 hit되어 Coverage가 saturation될 수 있다.
+
+//해결방안
+class SolveBefor;
+    rand bit x;
+    rand biti [1:0] y;
+    contraint c_xy {
+         (x==0) -> y==0;
+         solve x before y;  //랜덤 solver에게 x부터 정하고, 그 다음 y를 정해라
+         //즉, y!=0 -> x!=0
+    }
+endclass
+Case
+
+x
+
+y
+
+확률
+
+A
+
+0
+
+0
+
+1/4
+
+E
+
+1
+
+0
+
+1/8
+
+F
+
+1
+
+1
+
+1/4
+
+G
+
+1
+
+2
+
+1/4
+
+H
+
+1
+
+3
+
+1/4
+
+🔹 Controlling Constraint Blocks
+
+p.c_short.constraint_mode(0); // OFF
+p.c_short.constraint_mode(1); // ON
+//constraint를 블록 단위로 on/off할 수 있다.
+EX)
+
+program test_packet;
+  class Packet;
+    rand int length;
+
+    // length range constraints
+    constraint c_short { length inside {[1:32]}; }
+    constraint c_long  { length inside {[1000:1023]}; }
+//같은 length 변수에 대해 서로 다른 constraint를 걸어줌
+//c_short과 c_long은 disjoint한 범위라서 둘이 동시에 켜져 있으면 해가 존재하지 않음.
+
+    function void display(string tag="");
+      $display("[%s] length=%0d", tag, length);
+    endfunction
+  endclass
+
+  task automatic transmit(Packet p);
+    $display("TRANSMIT: length=%0d", p.length);
+  endtask
+
+  Packet p;
+
+  initial begin
+    p = new;
+    // Create a long packet by disabling short constraint
+    // (Both constraints are ON by default -> unsat -> must turn one OFF)
+    p.c_short.constraint_mode(0);       // OFF short
+    p.c_long.constraint_mode(1);        // (optional) ensure ON long
+
+    assert(p.randomize())
+      else $fatal(1, "Randomize failed for LONG packet!");
+    //length를 constraint random 진행 시, randomize 실패 시 시뮬 종료($fatal)
+    p.display("LONG");
+    transmit(p);
+
+    // Create a short packet by disabling all constraints
+    // then enabling only the short constraint
+    p.constraint_mode(0);               // Turn OFF all constraints
+    p.c_short.constraint_mode(1);       // Turn ON only short
+    // p.c_long is still OFF because constraint_mode(0) disabled it
+
+    assert(p.randomize())
+      else $fatal(1, "Randomize failed for SHORT packet!");
+
+    p.display("SHORT");
+    transmit(p);
+
+    $finish;
+  end
+
+endprogram
+🔹Nonrandom Values
+
+랜덤을 잠시 멈추고, 본인이 직접 값을 넣고 싶을 때, 아래와 같은 방법을 사용한다.
+
+//1. rand_mode(0)
+p.length.rand_mode(0); // length를 non-random으로
+p.length = 42;
+//length만 고정
+
+assert(p.randomize());
+//2. randomize(null)
+p.randomize();
+//지금 값들이 constraint를 만족하는지에 대한 validity check 용도의 구문
+🔹Randomizing Array Size
+
+randomize의 대상은 값 뿐만 아니라 size도 될 수 있다.
+
+class dyn_size;
+  rand reg [31:0] d[];
+  constraint d_size { d.size inside {[1:10]}; }
+endclass
+🔹randcase / randsequence
+
+program test;
+	initial begin
+		int len;
+        for(int i=0; i<5; i++) begin
+			randcase
+			1: len = $urandom_range(0, 2); // 10%: 0, 1, or 2
+			8: len = $urandom_range(3, 5); // 80%: 3, 4, or 5
+			1: len = $urandom_range(6, 7); // 10%: 6 or 7
+			endcase
+			$display("len=%0d", len);
+		end
+	end
+endprogram
+//10%는 0~2에서 뽑고, 80%는 3~5에서 뽑고, 10%는 6~7에서 뽑는다
+program test;
+	initial begin
+       for (int i=0; i<5; i++) begin
+			randsequence (stream)
+			stream : cfg_read := 1 | io_read := 2 | mem_read := 5;
+			cfg_read : { cfg_read_task; } | { cfg_read_task; } cfg_read;
+			mem_read : { mem_read_task; } | { mem_read_task; } mem_read;
+			io_read : { io_read_task; } | { io_read_task; } io_read;
+			endsequence
+		end // for
+	end
+
+  	task cfg_read_task;
+		$display("cfg_read_task");
+	endtask
+  	task mem_read_task;
+		$display("mem_read_task");
+	endtask
+  	task io_read_task;
+		$display("io_read_task");
+	endtask
+endprogram
+/*
+선택지 A
+{ cfg_read_task; }
+→ cfg_read_task 한 번 실행하고 끝
+
+선택지 B
+{ cfg_read_task; } cfg_read
+→ cfg_read_task 한 번 실행한 뒤에, 다시 cfg_read 규칙을 재귀적으로 한 번 더 수행
+*/
+Threads and Interprocess Communication
+
+Testbench에서 동시에 여러 일을 하되, 변수 공유 버그 없이 필요할 때 thread를 만들고, 필요 없을 때 정확히 종료(disable)하는 방법을 학습해보자. 우선 기존 Verilog에서 begin ... end와 fork ... join의 차이는 다음과 같다. 특히, 동시에 여러 일을 하는 multi-threading으로 testbench를 구현하기 위해서는 fork-join 구문이 반드시 필요하다.
+
+begin ... end
+
+fork ... join
+
+한 프로세스 안에서 문장들을 순차 실행하는 블록
+
+현재 실행 중인 프로세스가 그 자리에 여러 개의 '자식 프로세스'를 생성해서 동시에 진행시키는 구문
+
+이 안에 있는 각 문장은 별도의 프로세스처럼 돌아가며 join은 전부 끝날 때까지 바깥으로 못 나간다는 의미
+
+즉, fork-join은 병렬 실행 + 끝날 떄까지 대기를 세트로 제공하는 블록
+
+
+🔹SystemVerilog의 fork-join 구문의 확장 : join, join_any, join_none
+
+fork ... join
+
+fork ... join_any
+
+fork ... join_none
+
+모든 자식 프로세스가 끝날 때까지 기다림
+
+병렬로 몇 개만 돌리고, 결과가 다 나올 때까지 기다릴 때 적합
+
+자식 중 하나라도 끝나면 바깥으로 나감
+
+나머지 자식들을 계속 돌아가는 중
+
+join_any 뒤에 남은 것들을 disable하거나 관리 로직을 같이 둬야 함
+
+여러 타임아웃/응답 중 먼저 오는 걸 선택하는 패턴에 적합
+
+기다리지 않고 즉시 바깥으로 나감
+
+자식 프로세스들을 백그라운드로 시작만 시키고, 할 일을 계속하는 패턴
+
+Testbench에서 driver/monitor/timeout을 동시에 시작하고 main sequence는 따로 진행하는 구조에 적합
+
+EX) fork-join
+
+program test;
+  initial begin
+    $display("@%0d: start fork...join example", $time);
+    #10 $display("@%0d: sequential after #10", $time);
+    $display("@0%0d: parallel start", $time);
+    
+    fork
+      #50 $display("@0%0d: parallel after #50", $time);
+      #50 $display("@0%0d: parallel after #50", $time);
+      begin
+        #30 $display("@0%0d: sequential after #30", $time);
+        #10 $display("@0%0d: sequential after #10", $time);
+      end
+    join
+    $display("@0%0d: after join", $time);
+    #80 $display("@0%0d: final after #80", $time); 
+  end
+endprogram
+/*
+@0: start fork...join example
+@10: sequential after #10
+@010: parallel start
+@040: sequential after #30
+@050: sequential after #10
+@060: parallel after #50
+@060: parallel after #50
+@060: after join
+@0140: final after #80
+*/
+
+EX) fork ... join_any
+
+program test;
+  initial begin
+    $display("@%0d: start fork...join_any example", $time);
+    #10 $display("@%0d: sequential after #10", $time);
+    $display("@0%0d: parallel start", $time);
+    
+    fork
+      #50 $display("@0%0d: parallel after #50", $time);
+      #50 $display("@0%0d: parallel after #50", $time);
+      begin
+        #30 $display("@0%0d: sequential after #30", $time);
+        #10 $display("@0%0d: sequential after #10", $time);
+      end
+    join_any
+    $display("@0%0d: after join", $time);
+    #80 $display("@0%0d: final after #80", $time); 
+  end
+endprogram
+/*
+@0: start fork...join_any example
+@10: sequential after #10
+@010: parallel start
+@040: sequential after #30
+@050: sequential after #10
+@050: after join
+@060: parallel after #50
+@060: parallel after #50
+@0130: final after #80
+*/
+
+EX) fork-join_none
+
+program test;
+  initial begin
+    $display("@%0d: start fork...join_none example", $time);
+    #10 $display("@%0d: sequential after #10", $time);
+    $display("@0%0d: parallel start", $time);
+    
+    fork
+      #50 $display("@0%0d: parallel after #50", $time);
+      #50 $display("@0%0d: parallel after #50", $time);
+      begin
+        #30 $display("@0%0d: sequential after #30", $time);
+        #10 $display("@0%0d: sequential after #10", $time);
+      end
+    join_none
+    $display("@0%0d: after join", $time);
+    #80 $display("@0%0d: final after #80", $time); 
+  end
+endprogram
+/*
+@0: start fork...join_none example
+@10: sequential after #10
+@010: parallel start
+@010: after join
+@040: sequential after #30
+@050: sequential after #10
+@060: parallel after #50
+@060: parallel after #50
+@090: final after #80
+*/
+
+🔥 핵심 오해 포인트 정리1 - automatic 사용
+
+fork-join_none은 새로운 thread를 생성해서 백그라운드로 돌리는데, 만약 thread가 여러개 생성되면 내부에서 fork된 프로세스가 누적된다. 그런데 보통의 thread 생성은 task/function을 통해서 선언되는데, 여기서 문제가 발생한다. task/function의 기본 라이프타임은 'static'인데, 이는 그 task의 로컬 변수를 위한 저장공간이 딱 1개이므로, 호출이 끝나도 그 저장공간이 유지되면서 여러 thread가 하나의 저장공간을 global하게 사용하기 때문에 변수 공유 문제가 발생한다. 이에 따라 automatic 선언이 필요하다.
+
+//program scope에서 automatic을 켜서, 동시성 코드에서 static 공유 부작용을 피할 수 있음
+program automatic test(busif.TB bus);
+  // Code for interface not shown
+  task wait_for_tr(Transaction tr);
+    fork
+      begin
+        wait (bus.cb.addr != tr.addr);
+        $display("@%0d: Addr match %d", $time, tr.addr);
+      end
+    join_none
+  endtask
+
+  Transaction tr;
+
+  initial
+    repeat (10) begin
+      // Create a random transaction
+      tr = new;
+      if (!tr.randomize) $finish;
+      // Send it into the DUT
+      transmit(tr); // Task not shown
+      // Wait for reply from DUT
+      wait_for_tr(tr);
+    end
+endprogram
+//variable scope에서 automatic을 켜서, 특정 변수에 대해서는 local variable로 돌릴 수 있음
+initial begin
+    for(int j=0; j<3 ;j++)
+        fork
+          automatic int k = ;
+          $write(k);
+        join_none
+    #0 display;
+end
+🔹Disabling Multiple Threads
+
+fork로 여러 thread를 띄웠는데, 타임아웃이 발생하였거나 일부만 멈추고 싶을 때, disable 구문을 사용하여, 현재 fork 블록에서 생성된 모든 자식 thread를 종료시킨다.
+
+fork
+  wait_for_tr(tr1);
+  fork
+    wait_for_tr(tr2);
+  join
+  #TIME_OUT disable fork;
+join
+🔥 핵심 오해 포인트 정리1 - 라벨링(Label)의 필요성 : 중첩 fork에서 disable을 사용하면 위험하다.
+
+하지만, 위 코드처럼 중첩 fork인 경우 어디까지가 disable 대상인지 헷갈리기 떄문에 다음과 같은 라벨링이 필요하다. 이렇게 되면 disable 대상이 명확해지며, 다른 thread는 안전하게 유지될 수 있다.
+
+begin : threads_1_2
+  wait_for_tr(tr1);
+  wait_for_tr(tr2);
+end
+
+#TIME_OUT disable threads_1_2;
+Functional Coverage
+
+Coverage란 '검증이 끝났다고 말할 수 있는 기준'이다. 이는 테스트를 많이 했는지, 의미 있게 했는지는 중요하지 않으며, '얼마나 많은', '무엇'을 검증했는가를 숫자로 보여주는 정량적인 기준이다. Coverage가 답하려는 핵심 질문은 다음과 같이 두 가지로 요약할 수 있다. (이 중 기능 관점에 해당하는 Functional Coverage에 대해 집중적으로 다뤄볼 것이다.)
+
+​
+
+기능 관점
+
+Testplan에 정의된 모든 기능(requirements) 이 실제로 검증되었는가?
+
+구현 관점
+
+RTL 코드 안에 한 번도 실행되지 않은 코드/구조는 없는가?
+
+​
+
+1️⃣ Code Coverage (Implicit Coverage)
+
+✔️ 개념
+
+RTL 기준으로 시뮬레이션 중 어떤 코드 구조가 실행되었는지를 측정
+
+툴이 자동으로 계산 → verification engineer의 추가 작업 거의 없음
+
+​
+
+✔️ code coverage 항목
+
+Line coverage : 각 코드 라인이 실행됐는가
+
+Branch coverage : if / else 각각 실행됐는가
+
+Condition coverage : if 조건의 참/거짓이 모두 나왔는가
+
+​
+
+✔️ code coverage 한계
+
+IP의 고유 기능/의도가 제대로 검증되었는지는 Code coverage만으로는 알 수 없음
+
+​
+
+2️⃣ Functional Coverage (Explicit Coverage)
+
+✔️ 개념
+
+Code Coverage의 한계를 보완
+
+즉, spec을 기준으로 “이 기능을 검증했다고 말하려면, 어떤 경우들이 나와야 하는가?”
+
+검증자가 검증하고 싶은 기능들을 itemize하기 위해 필요한 항목들을 모두 체크하기 위함
+
+​
+
+​
+
+👉 Functional Coverage 핵심 문법 정리1
+
+🔹 측정기 : covergroup ... endgroup
+
+어떤 것을 coverage로 측정할지를 정의하는 블록
+
+class 정의처럼 생각하면됨 (즉, 정의만 해두면 실제로는 측정 안하므로 반드시 instantiation 필요)
+
+따라서 instantiation 시 필요한 'new' 정의 필요
+
+​
+
+🔹 측정대상 : coverpoint
+
+어떤 것을 coverage로 측정할지를 정의하는 블록
+
+시뮬레이션 동안 어떤 값들을 가졌는지 '히스토그램'처럼 기록
+
+​
+
+🔹 sample
+
+sample은 coverpoint로 정의한 블록의 값을 캡처해서 coverage에 반영하는 함수
+
+sample을 호출하지 않으면, 값이 바뀌어도 coverage가 쌓이지 않으므로 반드시 작성해야 한다.
+
+​
+
+EX)
+
+//coverpoint tr.port;에서 tr은 클래스 객체(트랜잭션)고, port는 그 안의 랜덤 변수
+//즉, stimulus는 randomize()로 만들고, 그 결과를 sample()로 찍는다
+//가장 일반적인 constrained random + functional coverage 패턴
+program test;
+  class Transaction;
+    rand bit [31:0] data;
+    rand bit [2:0]  port;   // Eight port numbers
+  endclass
+
+  Transaction tr = new;
+
+  covergroup CovPort;
+    coverpoint tr.port;     // Measure coverage
+  endgroup
+
+  initial begin
+    CovPort ck = new;       // Instantiate covergroup
+
+    repeat (4) begin        // Run a few cycles
+      assert (tr.randomize()); // Create a transaction
+      ck.sample();          // Gather coverage
+    end
+  end
+endprogram
+🔹 bin
+
+위 예시에서 coverpoint tr.port;를 생각해보면, 이는 rand bit [2:0]이므로 0 ~ 7의 값까지 가질 수 있음.
+
+그러나 이 값은 단순히 '가질 수 있는' 값일 뿐, 전부 나와야 할 필요는 없을 수 있음.
+
+즉, bin이란 coverage를 계산하는 최소 단위(칸)
+
+다시 말해, bin은 그 대상 값을 어떤 그룹으로 나눠서 볼지에 대한 기준
+
+좀 더 쉽게 말하자면, 해당 시스템에서 하나의 값을 여러 묶음으로 나누어서 해당 묶음 내에서는 이런 경우들만 나오면 충분하다고 보는 기준이다.
+
+✅ 해당 '값'이 나와야 bin hit                                             :  bins <이름> = {값};
+
+✅ 해당 범위 '값1~값2'까지의 값이 나와야 bin hit            :  bins <이름> = {[값1 : 값2]};
+
+✅ 해당 범위 '값'부터 가능한 최댓값까지 나와야 bin hit   :  bins <이름> = {[값 : $]};
+
+✅ 위에서 정의한 bin에 속하지 않는 모든 값                     :  bins <이름> = default;
+
+​
+
+🔹auto_bin_max = k;
+
+covergroup에서 선정한 값을 k개의 bin으로 쪼개서 시뮬레이터가 알아서 큰 범주 k개로 묶어서 coverage를 확인하게 하는 방법
+
+시뮬레이터가 지정한 내부 binning 알고리즘에 따라 그 bin 경계가 달라짐 
+
+​
+
+EX)
+
+program test;
+  class Transaction;
+    rand bit [3:0] kind;
+  endclass
+
+  Transaction tr = new;
+
+  covergroup CovKind;
+    port: coverpoint tr.kind {
+      bins zero = {0};
+      bins lo   = {[1:3]};
+      bins hi[] = {[8:$]};
+      bins misc = default;
+    }
+  endgroup
+
+  initial begin
+    CovKind ck = new;
+
+    repeat (10) begin
+      assert (tr.randomize());
+      $display("Kind = %0d", tr.kind);
+      ck.sample();
+    end
+  end
+endprogram
+EX)
+
+program test;
+
+  class Transaction;
+    rand bit [31:0] data;
+    rand bit [2:0]  port;   // 0~7
+  endclass
+
+  Transaction tr = new;
+
+  covergroup CovPort;
+    coverpoint tr.port {
+      option.auto_bin_max = 2;
+    }
+  endgroup
+
+  initial begin
+    CovPort ck = new;
+
+    repeat (4) begin
+      assert (tr.randomize());
+      ck.sample();
+    end
+  end
+endprogram
