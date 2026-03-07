@@ -1221,7 +1221,7 @@ Testbench - DUT 연결을 안전하고, 재사용 가능하고, 타이밍 버그
 ​
 🔥 핵심 오해 포인트 정리1 - Multiple Expressions
 
-		SystemVerilog constraint는 수학식처럼 연속 비교를 지원하지 않고, 분리해서 사용해야 한다.
+SystemVerilog constraint는 수학식처럼 연속 비교를 지원하지 않고, 분리해서 사용해야 한다.
 		
 		constraint good {
 		  0 < a;
@@ -1252,66 +1252,26 @@ Testbench - DUT 연결을 안전하고, 재사용 가능하고, 타이밍 버그
 | **2** | **60 / 220** | **2** | **20 / 100** |
 | **3** | **60 / 220** | **3** | **20 / 100** |
 
-●Dynamically Changing Distribution
+​👉 Dynamically Changing Distribution
 
-bit [31:0] w_byte=1, w_word=3, w_lwrd=5;
+		bit [31:0] w_byte=1, w_word=3, w_lwrd=5;
+		
+		len dist {
+		  BYTE := w_byte,
+		  WORD := w_word,
+		  LWRD := w_lwrd;
+		}
 
-len dist {
-  BYTE := w_byte,
-  WORD := w_word,
-  LWRD := w_lwrd;
-}
-🔹 Distribution Function
+- 🔹 Distribution Function
 
-앞서 살펴본 dist{}는 정적인 확률 비율이라면 Distribution function은 모양을 가진 확률 분포함수에 해당한다. 대표적인 함수를 정리하면 다음과 같다.
+	- 앞서 살펴본 dist{}는 정적인 확률 비율이라면 Distribution function은 모양을 가진 확률 분포함수에 해당한다. 대표적인 함수를 정리하면 다음과 같다.
 
-함수
-
-분포 의미
-
-언제 쓰나
-
-$dist_uniform
-
-완전 균등
-
-baseline 랜덤
-
-$dist_normal
-
-정규분포 (종 모양)
-
-평균 근처가 자주
-
-$dist_poisson
-
-포아송 분포
-
-이벤트 발생 횟수
-
-$dist_exponential
-
-지수 감소
-
-timeout, retry
-
-$random
-
-signed 32-bit
-
-단순 난수
-
-$urandom
-
-unsigned 32-bit
-
-주소, 길이
-
-$urandom_range(a,b)
-
-[a,b] 균등
-
-가장 많이 씀
+| 함수 | 분포 의미 | 언제 쓰나 | 
+| :---: | :---: | :---: | 
+| **0** | **40 / 220** | **0** | 
+| **1** | **60 / 220** | **1** | 
+| **2** | **60 / 220** | **2** |
+| **3** | **60 / 220** | **3** | 
 
 x = $urandom_range(0, 15);
 🔹 Conditional Constraints1 : implication (->)
