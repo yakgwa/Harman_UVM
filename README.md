@@ -1528,318 +1528,274 @@ EX) fork-join
 
 EX) fork ... join_any
 
-program test;
-  initial begin
-    $display("@%0d: start fork...join_any example", $time);
-    #10 $display("@%0d: sequential after #10", $time);
-    $display("@0%0d: parallel start", $time);
-    
-    fork
-      #50 $display("@0%0d: parallel after #50", $time);
-      #50 $display("@0%0d: parallel after #50", $time);
-      begin
-        #30 $display("@0%0d: sequential after #30", $time);
-        #10 $display("@0%0d: sequential after #10", $time);
-      end
-    join_any
-    $display("@0%0d: after join", $time);
-    #80 $display("@0%0d: final after #80", $time); 
-  end
-endprogram
-/*
-@0: start fork...join_any example
-@10: sequential after #10
-@010: parallel start
-@040: sequential after #30
-@050: sequential after #10
-@050: after join
-@060: parallel after #50
-@060: parallel after #50
-@0130: final after #80
-*/
+		program test;
+		  initial begin
+		    $display("@%0d: start fork...join_any example", $time);
+		    #10 $display("@%0d: sequential after #10", $time);
+		    $display("@0%0d: parallel start", $time);
+		    
+		    fork
+		      #50 $display("@0%0d: parallel after #50", $time);
+		      #50 $display("@0%0d: parallel after #50", $time);
+		      begin
+		        #30 $display("@0%0d: sequential after #30", $time);
+		        #10 $display("@0%0d: sequential after #10", $time);
+		      end
+		    join_any
+		    $display("@0%0d: after join", $time);
+		    #80 $display("@0%0d: final after #80", $time); 
+		  end
+		endprogram
+		/*
+		@0: start fork...join_any example
+		@10: sequential after #10
+		@010: parallel start
+		@040: sequential after #30
+		@050: sequential after #10
+		@050: after join
+		@060: parallel after #50
+		@060: parallel after #50
+		@0130: final after #80
+		*/
+
+<div align="center"><img src="https://github.com/yakgwa/Harman_UVM/blob/main/Picture/image_6.png" width="400"/>
+
+<div align="left">
 
 EX) fork-join_none
 
-program test;
-  initial begin
-    $display("@%0d: start fork...join_none example", $time);
-    #10 $display("@%0d: sequential after #10", $time);
-    $display("@0%0d: parallel start", $time);
-    
-    fork
-      #50 $display("@0%0d: parallel after #50", $time);
-      #50 $display("@0%0d: parallel after #50", $time);
-      begin
-        #30 $display("@0%0d: sequential after #30", $time);
-        #10 $display("@0%0d: sequential after #10", $time);
-      end
-    join_none
-    $display("@0%0d: after join", $time);
-    #80 $display("@0%0d: final after #80", $time); 
-  end
-endprogram
-/*
-@0: start fork...join_none example
-@10: sequential after #10
-@010: parallel start
-@010: after join
-@040: sequential after #30
-@050: sequential after #10
-@060: parallel after #50
-@060: parallel after #50
-@090: final after #80
-*/
+		program test;
+		  initial begin
+		    $display("@%0d: start fork...join_none example", $time);
+		    #10 $display("@%0d: sequential after #10", $time);
+		    $display("@0%0d: parallel start", $time);
+		    
+		    fork
+		      #50 $display("@0%0d: parallel after #50", $time);
+		      #50 $display("@0%0d: parallel after #50", $time);
+		      begin
+		        #30 $display("@0%0d: sequential after #30", $time);
+		        #10 $display("@0%0d: sequential after #10", $time);
+		      end
+		    join_none
+		    $display("@0%0d: after join", $time);
+		    #80 $display("@0%0d: final after #80", $time); 
+		  end
+		endprogram
+		/*
+		@0: start fork...join_none example
+		@10: sequential after #10
+		@010: parallel start
+		@010: after join
+		@040: sequential after #30
+		@050: sequential after #10
+		@060: parallel after #50
+		@060: parallel after #50
+		@090: final after #80
+		*/
+
+<div align="center"><img src="https://github.com/yakgwa/Harman_UVM/blob/main/Picture/image_7.png" width="400"/>
+
+<div align="left">
 
 🔥 핵심 오해 포인트 정리1 - automatic 사용
 
 fork-join_none은 새로운 thread를 생성해서 백그라운드로 돌리는데, 만약 thread가 여러개 생성되면 내부에서 fork된 프로세스가 누적된다. 그런데 보통의 thread 생성은 task/function을 통해서 선언되는데, 여기서 문제가 발생한다. task/function의 기본 라이프타임은 'static'인데, 이는 그 task의 로컬 변수를 위한 저장공간이 딱 1개이므로, 호출이 끝나도 그 저장공간이 유지되면서 여러 thread가 하나의 저장공간을 global하게 사용하기 때문에 변수 공유 문제가 발생한다. 이에 따라 automatic 선언이 필요하다.
 
-//program scope에서 automatic을 켜서, 동시성 코드에서 static 공유 부작용을 피할 수 있음
-program automatic test(busif.TB bus);
-  // Code for interface not shown
-  task wait_for_tr(Transaction tr);
-    fork
-      begin
-        wait (bus.cb.addr != tr.addr);
-        $display("@%0d: Addr match %d", $time, tr.addr);
-      end
-    join_none
-  endtask
+		//program scope에서 automatic을 켜서, 동시성 코드에서 static 공유 부작용을 피할 수 있음
+		program automatic test(busif.TB bus);
+		  // Code for interface not shown
+		  task wait_for_tr(Transaction tr);
+		    fork
+		      begin
+		        wait (bus.cb.addr != tr.addr);
+		        $display("@%0d: Addr match %d", $time, tr.addr);
+		      end
+		    join_none
+		  endtask
+		
+		  Transaction tr;
+		
+		  initial
+		    repeat (10) begin
+		      // Create a random transaction
+		      tr = new;
+		      if (!tr.randomize) $finish;
+		      // Send it into the DUT
+		      transmit(tr); // Task not shown
+		      // Wait for reply from DUT
+		      wait_for_tr(tr);
+		    end
+		endprogram
 
-  Transaction tr;
+		
+		//variable scope에서 automatic을 켜서, 특정 변수에 대해서는 local variable로 돌릴 수 있음
+		initial begin
+		    for(int j=0; j<3 ;j++)
+		        fork
+		          automatic int k = ;
+		          $write(k);
+		        join_none
+		    #0 display;
+		end
 
-  initial
-    repeat (10) begin
-      // Create a random transaction
-      tr = new;
-      if (!tr.randomize) $finish;
-      // Send it into the DUT
-      transmit(tr); // Task not shown
-      // Wait for reply from DUT
-      wait_for_tr(tr);
-    end
-endprogram
-//variable scope에서 automatic을 켜서, 특정 변수에 대해서는 local variable로 돌릴 수 있음
-initial begin
-    for(int j=0; j<3 ;j++)
-        fork
-          automatic int k = ;
-          $write(k);
-        join_none
-    #0 display;
-end
-🔹Disabling Multiple Threads
+- 🔹Disabling Multiple Threads
+	- fork로 여러 thread를 띄웠는데, 타임아웃이 발생하였거나 일부만 멈추고 싶을 때, disable 구문을 사용하여, 현재 fork 블록에서 생성된 모든 자식 thread를 종료시킨다.
 
-fork로 여러 thread를 띄웠는데, 타임아웃이 발생하였거나 일부만 멈추고 싶을 때, disable 구문을 사용하여, 현재 fork 블록에서 생성된 모든 자식 thread를 종료시킨다.
+			fork
+			  wait_for_tr(tr1);
+			  fork
+			    wait_for_tr(tr2);
+			  join
+			  #TIME_OUT disable fork;
+			join
 
-fork
-  wait_for_tr(tr1);
-  fork
-    wait_for_tr(tr2);
-  join
-  #TIME_OUT disable fork;
-join
 🔥 핵심 오해 포인트 정리1 - 라벨링(Label)의 필요성 : 중첩 fork에서 disable을 사용하면 위험하다.
-
 하지만, 위 코드처럼 중첩 fork인 경우 어디까지가 disable 대상인지 헷갈리기 떄문에 다음과 같은 라벨링이 필요하다. 이렇게 되면 disable 대상이 명확해지며, 다른 thread는 안전하게 유지될 수 있다.
 
-begin : threads_1_2
-  wait_for_tr(tr1);
-  wait_for_tr(tr2);
-end
+		begin : threads_1_2
+		  wait_for_tr(tr1);
+		  wait_for_tr(tr2);
+		end
+		
+		#TIME_OUT disable threads_1_2;
 
-#TIME_OUT disable threads_1_2;
-Functional Coverage
-
+### Functional Coverage
 Coverage란 '검증이 끝났다고 말할 수 있는 기준'이다. 이는 테스트를 많이 했는지, 의미 있게 했는지는 중요하지 않으며, '얼마나 많은', '무엇'을 검증했는가를 숫자로 보여주는 정량적인 기준이다. Coverage가 답하려는 핵심 질문은 다음과 같이 두 가지로 요약할 수 있다. (이 중 기능 관점에 해당하는 Functional Coverage에 대해 집중적으로 다뤄볼 것이다.)
 
-​
-
-기능 관점
-
-Testplan에 정의된 모든 기능(requirements) 이 실제로 검증되었는가?
-
-구현 관점
-
-RTL 코드 안에 한 번도 실행되지 않은 코드/구조는 없는가?
-
-​
+- 기능 관점
+	- Testplan에 정의된 모든 기능(requirements) 이 실제로 검증되었는가?
+- 구현 관점
+	- RTL 코드 안에 한 번도 실행되지 않은 코드/구조는 없는가?
 
 1️⃣ Code Coverage (Implicit Coverage)
-
 ✔️ 개념
-
-RTL 기준으로 시뮬레이션 중 어떤 코드 구조가 실행되었는지를 측정
-
-툴이 자동으로 계산 → verification engineer의 추가 작업 거의 없음
-
-​
+- RTL 기준으로 시뮬레이션 중 어떤 코드 구조가 실행되었는지를 측정
+- 툴이 자동으로 계산 → verification engineer의 추가 작업 거의 없음
 
 ✔️ code coverage 항목
-
-Line coverage : 각 코드 라인이 실행됐는가
-
-Branch coverage : if / else 각각 실행됐는가
-
-Condition coverage : if 조건의 참/거짓이 모두 나왔는가
-
-​
+- Line coverage : 각 코드 라인이 실행됐는가
+- Branch coverage : if / else 각각 실행됐는가
+- Condition coverage : if 조건의 참/거짓이 모두 나왔는가
 
 ✔️ code coverage 한계
-
-IP의 고유 기능/의도가 제대로 검증되었는지는 Code coverage만으로는 알 수 없음
-
-​
+- IP의 고유 기능/의도가 제대로 검증되었는지는 Code coverage만으로는 알 수 없음
 
 2️⃣ Functional Coverage (Explicit Coverage)
-
 ✔️ 개념
-
-Code Coverage의 한계를 보완
-
-즉, spec을 기준으로 “이 기능을 검증했다고 말하려면, 어떤 경우들이 나와야 하는가?”
-
-검증자가 검증하고 싶은 기능들을 itemize하기 위해 필요한 항목들을 모두 체크하기 위함
-
-​
-
-​
+- Code Coverage의 한계를 보완
+- 즉, spec을 기준으로 “이 기능을 검증했다고 말하려면, 어떤 경우들이 나와야 하는가?”
+- 검증자가 검증하고 싶은 기능들을 itemize하기 위해 필요한 항목들을 모두 체크하기 위함
 
 👉 Functional Coverage 핵심 문법 정리1
+- 🔹 측정기 : covergroup ... endgroup
+	- 어떤 것을 coverage로 측정할지를 정의하는 블록
+	- class 정의처럼 생각하면됨 (즉, 정의만 해두면 실제로는 측정 안하므로 반드시 instantiation 필요)
+	- 따라서 instantiation 시 필요한 'new' 정의 필요
 
-🔹 측정기 : covergroup ... endgroup
+​- 🔹 측정대상 : coverpoint
+	- 어떤 것을 coverage로 측정할지를 정의하는 블록
+	- 시뮬레이션 동안 어떤 값들을 가졌는지 '히스토그램'처럼 기록
 
-어떤 것을 coverage로 측정할지를 정의하는 블록
-
-class 정의처럼 생각하면됨 (즉, 정의만 해두면 실제로는 측정 안하므로 반드시 instantiation 필요)
-
-따라서 instantiation 시 필요한 'new' 정의 필요
-
-​
-
-🔹 측정대상 : coverpoint
-
-어떤 것을 coverage로 측정할지를 정의하는 블록
-
-시뮬레이션 동안 어떤 값들을 가졌는지 '히스토그램'처럼 기록
-
-​
-
-🔹 sample
-
-sample은 coverpoint로 정의한 블록의 값을 캡처해서 coverage에 반영하는 함수
-
-sample을 호출하지 않으면, 값이 바뀌어도 coverage가 쌓이지 않으므로 반드시 작성해야 한다.
-
-​
+​- 🔹 sample
+	- sample은 coverpoint로 정의한 블록의 값을 캡처해서 coverage에 반영하는 함수
+	- sample을 호출하지 않으면, 값이 바뀌어도 coverage가 쌓이지 않으므로 반드시 작성해야 한다.
 
 EX)
 
-//coverpoint tr.port;에서 tr은 클래스 객체(트랜잭션)고, port는 그 안의 랜덤 변수
-//즉, stimulus는 randomize()로 만들고, 그 결과를 sample()로 찍는다
-//가장 일반적인 constrained random + functional coverage 패턴
-program test;
-  class Transaction;
-    rand bit [31:0] data;
-    rand bit [2:0]  port;   // Eight port numbers
-  endclass
+		//coverpoint tr.port;에서 tr은 클래스 객체(트랜잭션)고, port는 그 안의 랜덤 변수
+		//즉, stimulus는 randomize()로 만들고, 그 결과를 sample()로 찍는다
+		//가장 일반적인 constrained random + functional coverage 패턴
+		program test;
+		  class Transaction;
+		    rand bit [31:0] data;
+		    rand bit [2:0]  port;   // Eight port numbers
+		  endclass
+		
+		  Transaction tr = new;
+		
+		  covergroup CovPort;
+		    coverpoint tr.port;     // Measure coverage
+		  endgroup
+		
+		  initial begin
+		    CovPort ck = new;       // Instantiate covergroup
+		
+		    repeat (4) begin        // Run a few cycles
+		      assert (tr.randomize()); // Create a transaction
+		      ck.sample();          // Gather coverage
+		    end
+		  end
+		endprogram
+		
+- 🔹 bin
+	- 위 예시에서 coverpoint tr.port;를 생각해보면, 이는 rand bit [2:0]이므로 0 ~ 7의 값까지 가질 수 있음.
+	- 그러나 이 값은 단순히 '가질 수 있는' 값일 뿐, 전부 나와야 할 필요는 없을 수 있음.
+	- 즉, bin이란 coverage를 계산하는 최소 단위(칸)
+	- 다시 말해, bin은 그 대상 값을 어떤 그룹으로 나눠서 볼지에 대한 기준
+	- 좀 더 쉽게 말하자면, 해당 시스템에서 하나의 값을 여러 묶음으로 나누어서 해당 묶음 내에서는 이런 경우들만 나오면 충분하다고 보는 기준이다.
 
-  Transaction tr = new;
+	- ✅ 해당 '값'이 나와야 bin hit :  bins <이름> = {값};
+	- ✅ 해당 범위 '값1~값2'까지의 값이 나와야 bin hit :  bins <이름> = {[값1 : 값2]};
+	- ✅ 해당 범위 '값'부터 가능한 최댓값까지 나와야 bin hit  :  bins <이름> = {[값 : $]};
+	- ✅ 위에서 정의한 bin에 속하지 않는 모든 값 :  bins <이름> = default;
 
-  covergroup CovPort;
-    coverpoint tr.port;     // Measure coverage
-  endgroup
-
-  initial begin
-    CovPort ck = new;       // Instantiate covergroup
-
-    repeat (4) begin        // Run a few cycles
-      assert (tr.randomize()); // Create a transaction
-      ck.sample();          // Gather coverage
-    end
-  end
-endprogram
-🔹 bin
-
-위 예시에서 coverpoint tr.port;를 생각해보면, 이는 rand bit [2:0]이므로 0 ~ 7의 값까지 가질 수 있음.
-
-그러나 이 값은 단순히 '가질 수 있는' 값일 뿐, 전부 나와야 할 필요는 없을 수 있음.
-
-즉, bin이란 coverage를 계산하는 최소 단위(칸)
-
-다시 말해, bin은 그 대상 값을 어떤 그룹으로 나눠서 볼지에 대한 기준
-
-좀 더 쉽게 말하자면, 해당 시스템에서 하나의 값을 여러 묶음으로 나누어서 해당 묶음 내에서는 이런 경우들만 나오면 충분하다고 보는 기준이다.
-
-✅ 해당 '값'이 나와야 bin hit                                             :  bins <이름> = {값};
-
-✅ 해당 범위 '값1~값2'까지의 값이 나와야 bin hit            :  bins <이름> = {[값1 : 값2]};
-
-✅ 해당 범위 '값'부터 가능한 최댓값까지 나와야 bin hit   :  bins <이름> = {[값 : $]};
-
-✅ 위에서 정의한 bin에 속하지 않는 모든 값                     :  bins <이름> = default;
-
-​
-
-🔹auto_bin_max = k;
-
-covergroup에서 선정한 값을 k개의 bin으로 쪼개서 시뮬레이터가 알아서 큰 범주 k개로 묶어서 coverage를 확인하게 하는 방법
-
-시뮬레이터가 지정한 내부 binning 알고리즘에 따라 그 bin 경계가 달라짐 
-
-​
+- 🔹auto_bin_max = k;
+	- covergroup에서 선정한 값을 k개의 bin으로 쪼개서 시뮬레이터가 알아서 큰 범주 k개로 묶어서 coverage를 확인하게 하는 방법
+	- 시뮬레이터가 지정한 내부 binning 알고리즘에 따라 그 bin 경계가 달라짐 
 
 EX)
 
-program test;
-  class Transaction;
-    rand bit [3:0] kind;
-  endclass
-
-  Transaction tr = new;
-
-  covergroup CovKind;
-    port: coverpoint tr.kind {
-      bins zero = {0};
-      bins lo   = {[1:3]};
-      bins hi[] = {[8:$]};
-      bins misc = default;
-    }
-  endgroup
-
-  initial begin
-    CovKind ck = new;
-
-    repeat (10) begin
-      assert (tr.randomize());
-      $display("Kind = %0d", tr.kind);
-      ck.sample();
-    end
-  end
-endprogram
+		program test;
+		  class Transaction;
+		    rand bit [3:0] kind;
+		  endclass
+		
+		  Transaction tr = new;
+		
+		  covergroup CovKind;
+		    port: coverpoint tr.kind {
+		      bins zero = {0};
+		      bins lo   = {[1:3]};
+		      bins hi[] = {[8:$]};
+		      bins misc = default;
+		    }
+		  endgroup
+		
+		  initial begin
+		    CovKind ck = new;
+		
+		    repeat (10) begin
+		      assert (tr.randomize());
+		      $display("Kind = %0d", tr.kind);
+		      ck.sample();
+		    end
+		  end
+		endprogram
+		
 EX)
 
-program test;
-
-  class Transaction;
-    rand bit [31:0] data;
-    rand bit [2:0]  port;   // 0~7
-  endclass
-
-  Transaction tr = new;
-
-  covergroup CovPort;
-    coverpoint tr.port {
-      option.auto_bin_max = 2;
-    }
-  endgroup
-
-  initial begin
-    CovPort ck = new;
-
-    repeat (4) begin
-      assert (tr.randomize());
-      ck.sample();
-    end
-  end
-endprogram
+		program test;
+		
+		  class Transaction;
+		    rand bit [31:0] data;
+		    rand bit [2:0]  port;   // 0~7
+		  endclass
+		
+		  Transaction tr = new;
+		
+		  covergroup CovPort;
+		    coverpoint tr.port {
+		      option.auto_bin_max = 2;
+		    }
+		  endgroup
+		
+		  initial begin
+		    CovPort ck = new;
+		
+		    repeat (4) begin
+		      assert (tr.randomize());
+		      ck.sample();
+		    end
+		  end
+		endprogram
