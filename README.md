@@ -1268,274 +1268,209 @@ SystemVerilog constraint는 수학식처럼 연속 비교를 지원하지 않고
 
 | 함수 | 분포 의미 | 언제 쓰나 | 
 | :---: | :---: | :---: | 
-| **0** | **40 / 220** | **0** | 
-| **1** | **60 / 220** | **1** | 
-| **2** | **60 / 220** | **2** |
-| **3** | **60 / 220** | **3** | 
+| **$dist_uniform** | **완전 균등** | **baseline 랜덤** | 
+| **$dist_normal** | **정규분포 (종 모양)** | **평균 근처가 자주** | 
+| **$dist_poisson** | **포아송 분포** | **이벤트 발생 횟수** | 
+| **$dist_exponential** | **지수 감소** | **timeout, retry** | 
+| **$random** | **signed 32-bit** | **단순 난수** | 
+| **$urandom** | **unsigned 32-bit** | **주소, 길이** | 
+| **$urandom_range(a,b)** | **[a,b] 균등** | **가장 많이 씀** | 
 
-x = $urandom_range(0, 15);
-🔹 Conditional Constraints1 : implication (->)
+		x = $urandom_range(0, 15);
 
-class BusOp;
-    ...
-    constraint c_io {
-        (io_space_mode) -> addr[31] == 1'b1;
-    }
-//io_space_mode가 참이면, addr[31]은 반드시 1
-//거짓이면? → 아무 제약 없음
-🔹 Conditional Constraints2 : if - else 형
+- 🔹 Conditional Constraints1 : implication (->)
 
-class BusOp;
-    ...
-    constraint c_len_rw {
-        if (op == READ)
-            len inside {[BYTE:LWRD]};
-        else
-            len == LWRD;
-    }
+		class BusOp;
+		    ...
+		    constraint c_io {
+		        (io_space_mode) -> addr[31] == 1'b1;
+		    }
+		//io_space_mode가 참이면, addr[31]은 반드시 1
+		//거짓이면? → 아무 제약 없음
+  
+- 🔹 Conditional Constraints2 : if - else 형
+
+		class BusOp;
+		    ...
+		    constraint c_len_rw {
+		        if (op == READ)
+		            len inside {[BYTE:LWRD]};
+		        else
+		            len == LWRD;
+		    }
+  
 🔥 핵심 오해 포인트 정리1 - Implication(->)의 부작용
 
-class impl;
-    rand bit x;
-    rand biti [1:0] y;
-    contraint c_xy {
-         (x==0) -> y==0;
-    }
-endclass
-Case
+		class impl;
+		    rand bit x;
+		    rand biti [1:0] y;
+		    contraint c_xy {
+		         (x==0) -> y==0;
+		    }
+		endclass
+		
 
-x
-
-y
-
-확률
-
-A
-
-0
-
-0
-
-1/2
-
-E
-
-1
-
-0
-
-1/8
-
-F
-
-1
-
-1
-
-1/8
-
-G
-
-1
-
-2
-
-1/8
-
-H
-
-1
-
-3
-
-1/8
+| Case | x | y | 확률 |
+| :---: | :---: | :---: | :---: |
+| **A** | **0** | **0** | **1/2** |
+| **E** | **1** | **0** | **1/8** |
+| **F** | **1** | **1** | **1/8** |
+| **G** | **1** | **2** | **1/8** |
+| **H** | **1** | **3** | **1/8** |
 
 확률분포가 균등하지 못하여 특정 케이스만 반복 hit되어 Coverage가 saturation될 수 있다.
 
-//해결방안
-class SolveBefor;
-    rand bit x;
-    rand biti [1:0] y;
-    contraint c_xy {
-         (x==0) -> y==0;
-         solve x before y;  //랜덤 solver에게 x부터 정하고, 그 다음 y를 정해라
-         //즉, y!=0 -> x!=0
-    }
-endclass
-Case
+		//해결방안
+		class SolveBefor;
+		    rand bit x;
+		    rand biti [1:0] y;
+		    contraint c_xy {
+		         (x==0) -> y==0;
+		         solve x before y;  //랜덤 solver에게 x부터 정하고, 그 다음 y를 정해라
+		         //즉, y!=0 -> x!=0
+		    }
+		endclass
+		
 
-x
+| Case | x | y | 확률 |
+| :---: | :---: | :---: | :---: |
+| **A** | **0** | **0** | **1/4** |
+| **E** | **1** | **0** | **1/8** |
+| **F** | **1** | **1** | **1/4** |
+| **G** | **1** | **2** | **1/4** |
+| **H** | **1** | **3** | **1/4** |
 
-y
+- 🔹 Controlling Constraint Blocks
 
-확률
-
-A
-
-0
-
-0
-
-1/4
-
-E
-
-1
-
-0
-
-1/8
-
-F
-
-1
-
-1
-
-1/4
-
-G
-
-1
-
-2
-
-1/4
-
-H
-
-1
-
-3
-
-1/4
-
-🔹 Controlling Constraint Blocks
-
-p.c_short.constraint_mode(0); // OFF
-p.c_short.constraint_mode(1); // ON
-//constraint를 블록 단위로 on/off할 수 있다.
+		p.c_short.constraint_mode(0); // OFF
+		p.c_short.constraint_mode(1); // ON
+		//constraint를 블록 단위로 on/off할 수 있다.
+  
 EX)
 
-program test_packet;
-  class Packet;
-    rand int length;
+		program test_packet;
+		  class Packet;
+		    rand int length;
+		
+		    // length range constraints
+		    constraint c_short { length inside {[1:32]}; }
+		    constraint c_long  { length inside {[1000:1023]}; }
+		//같은 length 변수에 대해 서로 다른 constraint를 걸어줌
+		//c_short과 c_long은 disjoint한 범위라서 둘이 동시에 켜져 있으면 해가 존재하지 않음.
+		
+		    function void display(string tag="");
+		      $display("[%s] length=%0d", tag, length);
+		    endfunction
+		  endclass
+		
+		  task automatic transmit(Packet p);
+		    $display("TRANSMIT: length=%0d", p.length);
+		  endtask
+		
+		  Packet p;
+		
+		  initial begin
+		    p = new;
+		    // Create a long packet by disabling short constraint
+		    // (Both constraints are ON by default -> unsat -> must turn one OFF)
+		    p.c_short.constraint_mode(0);       // OFF short
+		    p.c_long.constraint_mode(1);        // (optional) ensure ON long
+		
+		    assert(p.randomize())
+		      else $fatal(1, "Randomize failed for LONG packet!");
+		    //length를 constraint random 진행 시, randomize 실패 시 시뮬 종료($fatal)
+		    p.display("LONG");
+		    transmit(p);
+		
+		    // Create a short packet by disabling all constraints
+		    // then enabling only the short constraint
+		    p.constraint_mode(0);               // Turn OFF all constraints
+		    p.c_short.constraint_mode(1);       // Turn ON only short
+		    // p.c_long is still OFF because constraint_mode(0) disabled it
+		
+		    assert(p.randomize())
+		      else $fatal(1, "Randomize failed for SHORT packet!");
+		
+		    p.display("SHORT");
+		    transmit(p);
+		
+		    $finish;
+		  end
+		
+		endprogram
 
-    // length range constraints
-    constraint c_short { length inside {[1:32]}; }
-    constraint c_long  { length inside {[1000:1023]}; }
-//같은 length 변수에 대해 서로 다른 constraint를 걸어줌
-//c_short과 c_long은 disjoint한 범위라서 둘이 동시에 켜져 있으면 해가 존재하지 않음.
+- 🔹Nonrandom Values
+	- 랜덤을 잠시 멈추고, 본인이 직접 값을 넣고 싶을 때, 아래와 같은 방법을 사용한다.
 
-    function void display(string tag="");
-      $display("[%s] length=%0d", tag, length);
-    endfunction
-  endclass
+			//1. rand_mode(0)
+			p.length.rand_mode(0); // length를 non-random으로
+			p.length = 42;
+			//length만 고정
+			
+			assert(p.randomize());
+			//2. randomize(null)
+			p.randomize();
+			//지금 값들이 constraint를 만족하는지에 대한 validity check 용도의 구문
+			🔹Randomizing Array Size
+			
+			randomize의 대상은 값 뿐만 아니라 size도 될 수 있다.
+			
+			class dyn_size;
+			  rand reg [31:0] d[];
+			  constraint d_size { d.size inside {[1:10]}; }
+			endclass
 
-  task automatic transmit(Packet p);
-    $display("TRANSMIT: length=%0d", p.length);
-  endtask
+- 🔹randcase / randsequence
 
-  Packet p;
+		program test;
+			initial begin
+				int len;
+		        for(int i=0; i<5; i++) begin
+					randcase
+					1: len = $urandom_range(0, 2); // 10%: 0, 1, or 2
+					8: len = $urandom_range(3, 5); // 80%: 3, 4, or 5
+					1: len = $urandom_range(6, 7); // 10%: 6 or 7
+					endcase
+					$display("len=%0d", len);
+				end
+			end
+		endprogram
+		//10%는 0~2에서 뽑고, 80%는 3~5에서 뽑고, 10%는 6~7에서 뽑는다
 
-  initial begin
-    p = new;
-    // Create a long packet by disabling short constraint
-    // (Both constraints are ON by default -> unsat -> must turn one OFF)
-    p.c_short.constraint_mode(0);       // OFF short
-    p.c_long.constraint_mode(1);        // (optional) ensure ON long
-
-    assert(p.randomize())
-      else $fatal(1, "Randomize failed for LONG packet!");
-    //length를 constraint random 진행 시, randomize 실패 시 시뮬 종료($fatal)
-    p.display("LONG");
-    transmit(p);
-
-    // Create a short packet by disabling all constraints
-    // then enabling only the short constraint
-    p.constraint_mode(0);               // Turn OFF all constraints
-    p.c_short.constraint_mode(1);       // Turn ON only short
-    // p.c_long is still OFF because constraint_mode(0) disabled it
-
-    assert(p.randomize())
-      else $fatal(1, "Randomize failed for SHORT packet!");
-
-    p.display("SHORT");
-    transmit(p);
-
-    $finish;
-  end
-
-endprogram
-🔹Nonrandom Values
-
-랜덤을 잠시 멈추고, 본인이 직접 값을 넣고 싶을 때, 아래와 같은 방법을 사용한다.
-
-//1. rand_mode(0)
-p.length.rand_mode(0); // length를 non-random으로
-p.length = 42;
-//length만 고정
-
-assert(p.randomize());
-//2. randomize(null)
-p.randomize();
-//지금 값들이 constraint를 만족하는지에 대한 validity check 용도의 구문
-🔹Randomizing Array Size
-
-randomize의 대상은 값 뿐만 아니라 size도 될 수 있다.
-
-class dyn_size;
-  rand reg [31:0] d[];
-  constraint d_size { d.size inside {[1:10]}; }
-endclass
-🔹randcase / randsequence
-
-program test;
-	initial begin
-		int len;
-        for(int i=0; i<5; i++) begin
-			randcase
-			1: len = $urandom_range(0, 2); // 10%: 0, 1, or 2
-			8: len = $urandom_range(3, 5); // 80%: 3, 4, or 5
-			1: len = $urandom_range(6, 7); // 10%: 6 or 7
-			endcase
-			$display("len=%0d", len);
-		end
-	end
-endprogram
-//10%는 0~2에서 뽑고, 80%는 3~5에서 뽑고, 10%는 6~7에서 뽑는다
-program test;
-	initial begin
-       for (int i=0; i<5; i++) begin
-			randsequence (stream)
-			stream : cfg_read := 1 | io_read := 2 | mem_read := 5;
-			cfg_read : { cfg_read_task; } | { cfg_read_task; } cfg_read;
-			mem_read : { mem_read_task; } | { mem_read_task; } mem_read;
-			io_read : { io_read_task; } | { io_read_task; } io_read;
-			endsequence
-		end // for
-	end
-
-  	task cfg_read_task;
-		$display("cfg_read_task");
-	endtask
-  	task mem_read_task;
-		$display("mem_read_task");
-	endtask
-  	task io_read_task;
-		$display("io_read_task");
-	endtask
-endprogram
-/*
-선택지 A
-{ cfg_read_task; }
-→ cfg_read_task 한 번 실행하고 끝
-
-선택지 B
-{ cfg_read_task; } cfg_read
-→ cfg_read_task 한 번 실행한 뒤에, 다시 cfg_read 규칙을 재귀적으로 한 번 더 수행
-*/
-Threads and Interprocess Communication
+  
+		program test;
+			initial begin
+		       for (int i=0; i<5; i++) begin
+					randsequence (stream)
+					stream : cfg_read := 1 | io_read := 2 | mem_read := 5;
+					cfg_read : { cfg_read_task; } | { cfg_read_task; } cfg_read;
+					mem_read : { mem_read_task; } | { mem_read_task; } mem_read;
+					io_read : { io_read_task; } | { io_read_task; } io_read;
+					endsequence
+				end // for
+			end
+		
+		  	task cfg_read_task;
+				$display("cfg_read_task");
+			endtask
+		  	task mem_read_task;
+				$display("mem_read_task");
+			endtask
+		  	task io_read_task;
+				$display("io_read_task");
+			endtask
+		endprogram
+		/*
+		선택지 A
+		{ cfg_read_task; }
+		→ cfg_read_task 한 번 실행하고 끝
+		
+		선택지 B
+		{ cfg_read_task; } cfg_read
+		→ cfg_read_task 한 번 실행한 뒤에, 다시 cfg_read 규칙을 재귀적으로 한 번 더 수행
+		*/
+  
+### Threads and Interprocess Communication
 
 Testbench에서 동시에 여러 일을 하되, 변수 공유 버그 없이 필요할 때 thread를 만들고, 필요 없을 때 정확히 종료(disable)하는 방법을 학습해보자. 우선 기존 Verilog에서 begin ... end와 fork ... join의 차이는 다음과 같다. 특히, 동시에 여러 일을 하는 multi-threading으로 testbench를 구현하기 위해서는 fork-join 구문이 반드시 필요하다.
 
