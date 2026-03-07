@@ -1108,195 +1108,149 @@ Testbench - DUT 연결을 안전하고, 재사용 가능하고, 타이밍 버그
 
   - 예 : randc bit[1:0] kind → 0,1,2,3을 한 번씩 다 뽑고 나서 다시 랜덤 시작
 
+- 🔹 constraint
+	- 랜덤 값에 제약 조건을 걸어줌
+	- 꼭 있어야 하는 건 ❌ → “의미 있는 테스트”를 만들고 싶을 때 사용
 ​
+- 🔹assert(randomize())
 
-🔹 constraint
+		assert(p.randomize());
 
-랜덤 값에 제약 조건을 걸어줌
+	- 랜덤화 성공 → pass
+	- constraint가 충돌하면 → assert fail
+	- 즉, assert는 제약 조건이 만족되었는지를 체크하는 안전장치이다.
 
-꼭 있어야 하는 건 ❌ → “의미 있는 테스트”를 만들고 싶을 때 사용
+- 🔹 inside
 
+		c inside {[lo:hi]}; //lo <= c <= hi
+		!(c inside {[lo:hi]}); //c < lo  OR  c > hi
+		c inside {0,1,1,1,1,1}; //inside는 중복 허용(중복 개수 = 뽑힐 확률(weight))
+		                        //0 : 1회, 1 : 5회 → 1이 5배 더 잘 뽑힘
+  
+- EX) 기본 예제
+
+		program test;
+		
+		  class Packet;
+		    // Random variables
+		    rand  bit [31:0] src;
+		    rand  bit [31:0] dst;
+		    rand  bit [31:0] data[8];
+		    randc bit [1:0]  kind;
+		
+		    // Constraint: limit src range
+		    constraint c {
+		      src > 10;
+		      src < 15;
+		    }
+		
+		    function void display();
+		      $display("Src: %0d, Dst: %0d, Kind: %0d", src, dst, kind);
+		    endfunction
+		  endclass
+		
+		  Packet p;
+		
+		  initial begin
+		    p = new;
+		
+		    for (int i = 0; i < 10; i++) begin
+		      assert(p.randomize());
+		      p.display();
+		    end
+		  end
+		
+		endprogram
+  
+- EX) Choosing from an Array (inside + dynamic array)
+	- 미리 만들어 둔 값 집합 중에서만 랜덤으로 고른다
+
+			class Days;
+			  typedef enum {SUN, MON, TUE, WED, THU, FRI, SAT} DAYS_E;
+			
+			  DAYS_E choices[$];
+			  rand  DAYS_E choice;
+			
+			  constraint cday { choice inside {choices}; }
+			endclass
+			
+			Days days;
+			
+			initial begin
+			  days = new;
+			
+			  days.choices = '{Days::SUN, Days::SAT};
+			  assert(days.randomize());
+			  $display("Random weekend day %s\n", days.choice.name);
+			
+			  days.choices = '{Days::MON, Days::TUE, Days::WED, Days::THU, Days::FRI};
+			  assert(days.randomize());
+			  $display("Random week day %s", days.choice.name);
+			end
+   
+- EX) Permutation (randc index로 순열처럼 뽑기)
+
+		program test;
+		  class RandcInside;
+		    int array[];              // Values to choose
+		    randc bit [15:0] index;   // Index into array
+		
+		    function new(input int a[]); // Construct & initialize
+		      array = a;
+		    endfunction
+		
+		    function int pick;        // Return most recent pick
+		      return array[index];
+		    endfunction
+		
+		    constraint c_size { index < array.size; }
+		  endclass
+		
+		  initial begin
+		    RandcInside ri;
+		
+		    ri = new('{1, 3, 5, 7, 9, 11, 13});
+		
+		    repeat (ri.array.size) begin
+		      assert(ri.randomize());
+		      $display("Picked %2d [%0d]", ri.pick(), ri.index);
+		    end
+		  end
+		
+		endprogram
 ​
-
-🔹assert(randomize())
-
-assert(p.randomize());
-랜덤화 성공 → pass
-
-constraint가 충돌하면 → assert fail
-
-즉, assert는 제약 조건이 만족되었는지를 체크하는 안전장치이다.
-
-​
-
-🔹 inside
-
-c inside {[lo:hi]}; //lo <= c <= hi
-!(c inside {[lo:hi]}); //c < lo  OR  c > hi
-c inside {0,1,1,1,1,1}; //inside는 중복 허용(중복 개수 = 뽑힐 확률(weight))
-                        //0 : 1회, 1 : 5회 → 1이 5배 더 잘 뽑힘
-EX) 기본 예제
-
-program test;
-
-  class Packet;
-    // Random variables
-    rand  bit [31:0] src;
-    rand  bit [31:0] dst;
-    rand  bit [31:0] data[8];
-    randc bit [1:0]  kind;
-
-    // Constraint: limit src range
-    constraint c {
-      src > 10;
-      src < 15;
-    }
-
-    function void display();
-      $display("Src: %0d, Dst: %0d, Kind: %0d", src, dst, kind);
-    endfunction
-  endclass
-
-  Packet p;
-
-  initial begin
-    p = new;
-
-    for (int i = 0; i < 10; i++) begin
-      assert(p.randomize());
-      p.display();
-    end
-  end
-
-endprogram
-EX) Choosing from an Array (inside + dynamic array)
-
-미리 만들어 둔 값 집합 중에서만 랜덤으로 고른다
-
-class Days;
-  typedef enum {SUN, MON, TUE, WED, THU, FRI, SAT} DAYS_E;
-
-  DAYS_E choices[$];
-  rand  DAYS_E choice;
-
-  constraint cday { choice inside {choices}; }
-endclass
-
-Days days;
-
-initial begin
-  days = new;
-
-  days.choices = '{Days::SUN, Days::SAT};
-  assert(days.randomize());
-  $display("Random weekend day %s\n", days.choice.name);
-
-  days.choices = '{Days::MON, Days::TUE, Days::WED, Days::THU, Days::FRI};
-  assert(days.randomize());
-  $display("Random week day %s", days.choice.name);
-end
-EX) Permutation (randc index로 순열처럼 뽑기)
-
-program test;
-  class RandcInside;
-    int array[];              // Values to choose
-    randc bit [15:0] index;   // Index into array
-
-    function new(input int a[]); // Construct & initialize
-      array = a;
-    endfunction
-
-    function int pick;        // Return most recent pick
-      return array[index];
-    endfunction
-
-    constraint c_size { index < array.size; }
-  endclass
-
-  initial begin
-    RandcInside ri;
-
-    ri = new('{1, 3, 5, 7, 9, 11, 13});
-
-    repeat (ri.array.size) begin
-      assert(ri.randomize());
-      $display("Picked %2d [%0d]", ri.pick(), ri.index);
-    end
-  end
-
-endprogram
-​
-
 🔥 핵심 오해 포인트 정리1 - Multiple Expressions
 
-SystemVerilog constraint는 수학식처럼 연속 비교를 지원하지 않고, 분리해서 사용해야 한다.
-
-constraint good {
-  0 < a;
-  a < b;
-  b < c;
-}
-
-constraint bad {
-  0 < a < b < c; // ❌ 동작 안 함
-}
+		SystemVerilog constraint는 수학식처럼 연속 비교를 지원하지 않고, 분리해서 사용해야 한다.
+		
+		constraint good {
+		  0 < a;
+		  a < b;
+		  b < c;
+		}
+		
+		constraint bad {
+		  0 < a < b < c; // ❌ 동작 안 함
+		}
+		
 👉 Randomization 문법 정리2 (+Constraint)
 
-🔹 Distribution (dist)
+- 🔹 Distribution (dist)
 
-src dist {0:=40, [1:3]:=60};
-dst dist {0:/40, [1:3]:/60};
-문법
+		src dist {0:=40, [1:3]:=60};
+		dst dist {0:/40, [1:3]:/60};
 
-의미
+| 문법 | 의미 |
+| :---: | :---: |
+| **:=** | **값 하나당 weight** |
+| **:/** | **구간 전체에 weight를 나눔** |
 
-:=
-
-값 하나당 weight
-
-:/
-
-구간 전체에 weight를 나눔
-
-src
-
-확률
-
-dst
-
-확률
-
-0
-
-40 / 220
-
-0
-
-40 / 100
-
-1
-
-60 / 220
-
-1
-
-20 / 100
-
-2
-
-60 / 220
-
-2
-
-20 / 100
-
-3
-
-60 / 220
-
-3
-
-20 / 100
+| src | 확률 | dst | 확률 |
+| :---: | :---: | :---: | :---: |
+| **0** | **40 / 220** | **0** | **40 / 100** |
+| **1** | **60 / 220** | **1** | **20 / 100** |
+| **2** | **60 / 220** | **2** | **20 / 100** |
+| **3** | **60 / 220** | **3** | **20 / 100** |
 
 ●Dynamically Changing Distribution
 
